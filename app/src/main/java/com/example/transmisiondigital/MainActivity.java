@@ -34,7 +34,7 @@ import java.util.Map;
 public class MainActivity extends AppCompatActivity {
 
     private EditText editTextPassword, editTextEmail;
-    private Button btnIniciarSesion;
+    private Button btnLogin;
     private ProgressDialog progressDialog;
 
     @Override
@@ -42,11 +42,11 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        btnIniciarSesion = findViewById(R.id.btnIniciarSesion);
-        editTextEmail = findViewById(R.id.editTextUser);
+        btnLogin = findViewById(R.id.btnLogin);
+        editTextEmail = findViewById(R.id.editTextEmail);
         editTextPassword = findViewById(R.id.editTextPassword);
 
-        btnIniciarSesion.setOnClickListener(new View.OnClickListener() {
+        btnLogin.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 if (editTextPassword == null || editTextEmail == null ||
