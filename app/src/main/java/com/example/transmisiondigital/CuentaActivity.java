@@ -41,9 +41,10 @@ public class CuentaActivity extends AppCompatActivity {
 
         SharedPreferences sharedPreferences = getSharedPreferences("SesionUsuario", Context.MODE_PRIVATE);
         String token = sharedPreferences.getString("token", null);
+        Integer idTecnico = sharedPreferences.getInt("idTecnico", 0);
 
         btnCerrarSesion.setOnClickListener(v -> {
-            String url = "http://192.168.137.98:8000/api/logout";
+            String url = "http://192.168.137.98:8000/api/logout/" + idTecnico;
             JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST, url, null, new Response.Listener<JSONObject>() {
                 @Override
                 public void onResponse(JSONObject response) {
@@ -57,8 +58,8 @@ public class CuentaActivity extends AppCompatActivity {
                         // Guardar el token de autenticación en SharedPreferences
                         SharedPreferences sharedPreferences = getSharedPreferences("SesionUsuario", Context.MODE_PRIVATE);
                         SharedPreferences.Editor editor = sharedPreferences.edit();
-                        editor.putString("token", token);
-                        editor.putInt("idTecnico", usuario.getInt("id"));
+                        editor.remove("token");
+                        editor.remove("idTecnico");
                         editor.apply();
 
                         // Manejar el token según sea necesario
