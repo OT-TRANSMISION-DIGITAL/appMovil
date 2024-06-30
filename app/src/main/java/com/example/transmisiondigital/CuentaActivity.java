@@ -20,6 +20,7 @@ import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
 import com.example.transmisiondigital.admin.AdminMainActivity;
+import com.example.transmisiondigital.globalVariables.Conexion;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -32,19 +33,21 @@ public class CuentaActivity extends AppCompatActivity {
 
     private Button btnCerrarSesion;
     private ProgressDialog progressDialog;
+    private String URL = Conexion.URL;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_cuenta);
 
+
         //btnCerrarSesion = findViewById(R.id.btnCerrarSesion);
 
-        SharedPreferences sharedPreferences = getSharedPreferences("SesionUsuario", Context.MODE_PRIVATE);
+        SharedPreferences sharedPreferences = getSharedPreferences("sessionUser", Context.MODE_PRIVATE);
         String token = sharedPreferences.getString("token", null);
-        Integer idTecnico = sharedPreferences.getInt("idTecnico", 0);
+        Integer idUser = sharedPreferences.getInt("idUser", 0);
 
         btnCerrarSesion.setOnClickListener(v -> {
-            String url = "http://192.168.137.98:8000/api/logout/" + idTecnico;
+            String url = URL + "logout";
             JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST, url, null, new Response.Listener<JSONObject>() {
                 @Override
                 public void onResponse(JSONObject response) {
@@ -56,10 +59,10 @@ public class CuentaActivity extends AppCompatActivity {
                         JSONObject usuario = response.getJSONObject("usuario");
 
                         // Guardar el token de autenticación en SharedPreferences
-                        SharedPreferences sharedPreferences = getSharedPreferences("SesionUsuario", Context.MODE_PRIVATE);
+                        SharedPreferences sharedPreferences = getSharedPreferences("sessionUser", Context.MODE_PRIVATE);
                         SharedPreferences.Editor editor = sharedPreferences.edit();
                         editor.remove("token");
-                        editor.remove("idTecnico");
+                        editor.remove("idUsuario");
                         editor.apply();
 
                         // Manejar el token según sea necesario

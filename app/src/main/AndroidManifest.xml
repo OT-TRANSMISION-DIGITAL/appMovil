@@ -17,7 +17,16 @@
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
         <activity
-            android:name=".headerActivity"
+            android:name=".OrderActivity"
+            android:exported="false" />
+        <activity
+            android:name=".OrdersActivity"
+            android:exported="false" />
+        <activity
+            android:name=".includes.footerActivity"
+            android:exported="false" />
+        <activity
+            android:name=".includes.headerActivity"
             android:exported="false" />
         <activity
             android:name=".CuentaActivity"

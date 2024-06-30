@@ -1,12 +1,14 @@
-package com.example.transmisiondigital;
+package com.example.transmisiondigital.includes;
 
 import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.os.Bundle;
-import android.widget.Button;
 import android.widget.ImageButton;
 
 import androidx.appcompat.app.AppCompatActivity;
+
+import com.example.transmisiondigital.CuentaActivity;
+import com.example.transmisiondigital.R;
 
 public class headerActivity extends AppCompatActivity {
 
