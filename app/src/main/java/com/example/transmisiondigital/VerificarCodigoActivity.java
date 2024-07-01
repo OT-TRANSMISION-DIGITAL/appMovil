@@ -42,7 +42,7 @@ public class VerificarCodigoActivity extends AppCompatActivity {
         setContentView(R.layout.activity_verificar_codigo);
 
         Intent intent = getIntent();
-        String rutaFirmada = intent.getStringExtra("rutaFirmada");
+        String signedUrl = intent.getStringExtra("signedUrl");
 
         editTextCodigo = findViewById(R.id.editTextCodigo);
         btnVerificarCodigo = findViewById(R.id.btnVerificarCodigo);
@@ -79,8 +79,7 @@ public class VerificarCodigoActivity extends AppCompatActivity {
                 e.printStackTrace();
             }
 
-            String url = rutaFirmada;
-            JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST, url, jsonBody, new Response.Listener<JSONObject>() {
+            JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST, signedUrl, jsonBody, new Response.Listener<JSONObject>() {
                 @Override
                 public void onResponse(JSONObject response) {
                     // Manejar la respuesta del servidor
@@ -88,20 +87,18 @@ public class VerificarCodigoActivity extends AppCompatActivity {
                         // Extraer el token del objeto JSON
                         String token = response.getString("token");
 
-                        JSONObject usuario = response.getJSONObject("usuario");
+                        JSONObject user = response.getJSONObject("usuario");
 
                         // Guardar el token de autenticación en SharedPreferences
-                        SharedPreferences sharedPreferences = getSharedPreferences("SesionUsuario", Context.MODE_PRIVATE);
+                        SharedPreferences sharedPreferences = getSharedPreferences("sessionUser", Context.MODE_PRIVATE);
                         SharedPreferences.Editor editor = sharedPreferences.edit();
                         editor.putString("token", token);
-                        editor.putInt("idTecnico", usuario.getInt("id"));
+                        editor.putInt("idUser", user.getInt("id"));
                         editor.apply();
 
-                        // Manejar el token según sea necesario
-                        Log.d("Token", "Token obtenido: " + token);
                         progressDialog.dismiss();
 
-                        Intent intent = new Intent(VerificarCodigoActivity.this, AdminMainActivity.class);
+                        Intent intent = new Intent(VerificarCodigoActivity.this, OrdersActivity.class);
                         startActivity(intent);
                         finish();
 

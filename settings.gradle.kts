@@ -15,4 +15,3 @@ dependencyResolutionManagement {
 
 rootProject.name = "Transmision digital"
 include(":app")
- 

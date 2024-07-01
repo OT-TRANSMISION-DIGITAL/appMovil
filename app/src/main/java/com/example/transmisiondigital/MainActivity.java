@@ -22,6 +22,7 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
+import com.example.transmisiondigital.globalVariables.Conexion;
 import com.example.transmisiondigital.tecnico.TecnicoMainActivity;
 
 import org.json.JSONException;
@@ -36,9 +37,15 @@ public class MainActivity extends AppCompatActivity {
     private EditText editTextPassword, editTextEmail;
     private Button btnLogin;
     private ProgressDialog progressDialog;
+    private String URL = Conexion.URL;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        if(getSharedPreferences("sessionUser", Context.MODE_PRIVATE).contains("token")){
+            Intent intent = new Intent(MainActivity.this, OrdersActivity.class);
+            startActivity(intent);
+            finish();
+        }
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
@@ -85,7 +92,7 @@ public class MainActivity extends AppCompatActivity {
                 }
 
                 // Hacer la petición POST
-                String url = "http://192.168.137.98::8000/api/login";
+                String url = URL + "login";
                 JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST, url, jsonBody, new Response.Listener<JSONObject>() {
                     @Override
                     public void onResponse(JSONObject response) {
@@ -98,18 +105,18 @@ public class MainActivity extends AppCompatActivity {
                                 // Extraer el objeto "usuario" del objeto JSON
                                 JSONObject usuario = response.getJSONObject("usuario");
                                 // Extraer el nombre del objeto "usuario"
-                                String nombreTecnico = usuario.getString("nombre");
+                                String userName = usuario.getString("nombre");
 
                                 // Guardar el token de autenticación en SharedPreferences
-                                SharedPreferences sharedPreferences = getSharedPreferences("SesionUsuario", Context.MODE_PRIVATE);
+                                SharedPreferences sharedPreferences = getSharedPreferences("sessionUser", Context.MODE_PRIVATE);
                                 SharedPreferences.Editor editor = sharedPreferences.edit();
                                 editor.putString("token", token);
-                                editor.putInt("idTecnico", usuario.getInt("id"));
+                                editor.putInt("idUser", usuario.getInt("id"));
                                 editor.apply();
                                 progressDialog.dismiss();
 
                                 Intent intent = new Intent(MainActivity.this, TecnicoMainActivity.class);
-                                intent.putExtra("nombreTecnico", nombreTecnico);
+                                intent.putExtra("userName", userName);
                                 startActivity(intent);
                                 finish();
                             } else {
@@ -117,7 +124,7 @@ public class MainActivity extends AppCompatActivity {
 
                                 String rutaFirmada = response.getString("rutaFirmada");
                                 Intent intent = new Intent(MainActivity.this, VerificarCodigoActivity.class);
-                                intent.putExtra("rutaFirmada", rutaFirmada);
+                                intent.putExtra("signedUrl", rutaFirmada);
                                 startActivity(intent);
                                 finish();
                             }

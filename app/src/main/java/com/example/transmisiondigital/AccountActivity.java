@@ -2,7 +2,6 @@ package com.example.transmisiondigital;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import android.annotation.SuppressLint;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
@@ -19,7 +18,7 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
-import com.example.transmisiondigital.admin.AdminMainActivity;
+import com.example.transmisiondigital.globalVariables.Conexion;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -28,23 +27,25 @@ import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.Map;
 
-public class CuentaActivity extends AppCompatActivity {
+public class AccountActivity extends AppCompatActivity {
 
     private Button btnCerrarSesion;
     private ProgressDialog progressDialog;
+    private String URL = Conexion.URL;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_cuenta);
+        setContentView(R.layout.activity_account);
+
 
         //btnCerrarSesion = findViewById(R.id.btnCerrarSesion);
 
-        SharedPreferences sharedPreferences = getSharedPreferences("SesionUsuario", Context.MODE_PRIVATE);
+        SharedPreferences sharedPreferences = getSharedPreferences("sessionUser", Context.MODE_PRIVATE);
         String token = sharedPreferences.getString("token", null);
-        Integer idTecnico = sharedPreferences.getInt("idTecnico", 0);
+        Integer idUser = sharedPreferences.getInt("idUser", 0);
 
         btnCerrarSesion.setOnClickListener(v -> {
-            String url = "http://192.168.137.98:8000/api/logout/" + idTecnico;
+            String url = URL + "logout";
             JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST, url, null, new Response.Listener<JSONObject>() {
                 @Override
                 public void onResponse(JSONObject response) {
@@ -56,17 +57,17 @@ public class CuentaActivity extends AppCompatActivity {
                         JSONObject usuario = response.getJSONObject("usuario");
 
                         // Guardar el token de autenticación en SharedPreferences
-                        SharedPreferences sharedPreferences = getSharedPreferences("SesionUsuario", Context.MODE_PRIVATE);
+                        SharedPreferences sharedPreferences = getSharedPreferences("sessionUser", Context.MODE_PRIVATE);
                         SharedPreferences.Editor editor = sharedPreferences.edit();
                         editor.remove("token");
-                        editor.remove("idTecnico");
+                        editor.remove("idUsuario");
                         editor.apply();
 
                         // Manejar el token según sea necesario
                         Log.d("Token", "Token obtenido: " + token);
                         progressDialog.dismiss();
 
-                        Intent intent = new Intent(CuentaActivity.this, MainActivity.class);
+                        Intent intent = new Intent(AccountActivity.this, MainActivity.class);
                         startActivity(intent);
                         finish();
 
@@ -101,7 +102,7 @@ public class CuentaActivity extends AppCompatActivity {
                     Log.e("Error", "Error en la petición: " + mensajeError);
                     progressDialog.dismiss();
                     // Mostrar el mensaje de error en un cuadro de diálogo o Toast
-                    Toast.makeText(CuentaActivity.this, mensajeError, Toast.LENGTH_SHORT).show();
+                    Toast.makeText(AccountActivity.this, mensajeError, Toast.LENGTH_SHORT).show();
                 }
             }) {
                @Override
@@ -114,7 +115,7 @@ public class CuentaActivity extends AppCompatActivity {
             };
 
             // Añadir la petición a la cola de solicitudes
-            RequestQueue queue = Volley.newRequestQueue(CuentaActivity.this);
+            RequestQueue queue = Volley.newRequestQueue(AccountActivity.this);
             queue.add(request);
         });
     }

@@ -2,11 +2,9 @@ package com.example.transmisiondigital.admin;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import android.content.Intent;
 import android.os.Bundle;
 import android.widget.ImageButton;
 
-import com.example.transmisiondigital.CuentaActivity;
 import com.example.transmisiondigital.R;
 
 public class AdminMainActivity extends AppCompatActivity {
