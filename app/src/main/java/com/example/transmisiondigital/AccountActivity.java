@@ -2,7 +2,6 @@ package com.example.transmisiondigital;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import android.annotation.SuppressLint;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
@@ -19,7 +18,6 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
-import com.example.transmisiondigital.admin.AdminMainActivity;
 import com.example.transmisiondigital.globalVariables.Conexion;
 
 import org.json.JSONException;
@@ -29,7 +27,7 @@ import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.Map;
 
-public class CuentaActivity extends AppCompatActivity {
+public class AccountActivity extends AppCompatActivity {
 
     private Button btnCerrarSesion;
     private ProgressDialog progressDialog;
@@ -37,7 +35,7 @@ public class CuentaActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_cuenta);
+        setContentView(R.layout.activity_account);
 
 
         //btnCerrarSesion = findViewById(R.id.btnCerrarSesion);
@@ -69,7 +67,7 @@ public class CuentaActivity extends AppCompatActivity {
                         Log.d("Token", "Token obtenido: " + token);
                         progressDialog.dismiss();
 
-                        Intent intent = new Intent(CuentaActivity.this, MainActivity.class);
+                        Intent intent = new Intent(AccountActivity.this, MainActivity.class);
                         startActivity(intent);
                         finish();
 
@@ -104,7 +102,7 @@ public class CuentaActivity extends AppCompatActivity {
                     Log.e("Error", "Error en la petición: " + mensajeError);
                     progressDialog.dismiss();
                     // Mostrar el mensaje de error en un cuadro de diálogo o Toast
-                    Toast.makeText(CuentaActivity.this, mensajeError, Toast.LENGTH_SHORT).show();
+                    Toast.makeText(AccountActivity.this, mensajeError, Toast.LENGTH_SHORT).show();
                 }
             }) {
                @Override
@@ -117,7 +115,7 @@ public class CuentaActivity extends AppCompatActivity {
             };
 
             // Añadir la petición a la cola de solicitudes
-            RequestQueue queue = Volley.newRequestQueue(CuentaActivity.this);
+            RequestQueue queue = Volley.newRequestQueue(AccountActivity.this);
             queue.add(request);
         });
     }

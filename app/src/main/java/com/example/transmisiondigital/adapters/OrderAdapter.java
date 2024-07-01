@@ -66,7 +66,6 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.OrderViewHol
             public void onClick(View v) {
                 Intent intent = new Intent(v.getContext(), OrderActivity.class);
                 v.getContext().startActivity(intent);
-                // No puedes llamar a finish() desde aquí
             }
         });
     }

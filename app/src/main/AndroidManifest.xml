@@ -17,6 +17,12 @@
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
         <activity
+            android:name=".VisitActivity"
+            android:exported="false" />
+        <activity
+            android:name=".VisitsActivity"
+            android:exported="false" />
+        <activity
             android:name=".OrderActivity"
             android:exported="false" />
         <activity
@@ -29,7 +35,7 @@
             android:name=".includes.headerActivity"
             android:exported="false" />
         <activity
-            android:name=".CuentaActivity"
+            android:name=".AccountActivity"
             android:exported="false" />
         <activity
             android:name=".tecnico.TecnicoMainActivity"

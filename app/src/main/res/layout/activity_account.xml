@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".CuentaActivity"
+    tools:context=".AccountActivity"
     android:background="@color/background"
     >
 
@@ -81,7 +81,16 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/imageView3"
-        app:layout_constraintVertical_bias="0.091" />
+        app:layout_constraintVertical_bias="0.09" />
+
+    <include
+        android:id="@+id/includeFooter"
+        layout="@layout/activity_footer"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginTop="15dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/buttonCerrarSesion" />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

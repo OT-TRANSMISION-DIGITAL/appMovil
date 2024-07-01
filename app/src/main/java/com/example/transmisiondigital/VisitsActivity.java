@@ -6,6 +6,7 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -16,52 +17,55 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.example.transmisiondigital.adapters.OrderAdapter;
+import com.example.transmisiondigital.adapters.VisitAdapter;
 import com.example.transmisiondigital.includes.footerActivity;
-import com.example.transmisiondigital.models.Orders;
+import com.example.transmisiondigital.models.Visits;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
-public class OrdersActivity extends AppCompatActivity {
+public class VisitsActivity extends AppCompatActivity {
     private footerActivity footer;
-    List<Orders> ordersList;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_orders);
-        //footer = new footerActivity();
+        setContentView(R.layout.activity_visits);
+
+        // Encuentra el TextView del header y cambia el título
+        TextView textViewTitle = findViewById(R.id.textViewTitle);
+        textViewTitle.setText("VISITAS");
         footer();
+        //footer = new footerActivity(this);
         init();
     }
 
-    public void init() {
-       ordersList = new ArrayList<>();
-       ordersList.add(new Orders(date("2024-06-18"), "En proceso", "1234", "10:00", "1"));
-       ordersList.add(new Orders(date("2024-06-18"), "En proceso", "1234", "10:00", "2"));
-       ordersList.add(new Orders(date("2024-06-18"), "En proceso", "1234", "10:00", "3"));
-       ordersList.add(new Orders(date("2024-06-18"), "En proceso", "1234", "10:00", "4"));
-       ordersList.add(new Orders(date("2024-06-18"), "En proceso", "1234", "10:00", "5"));
-       ordersList.add(new Orders(date("2024-06-18"), "En proceso", "1234", "10:00", "6"));
-       ordersList.add(new Orders(date("2024-06-18"), "En proceso", "1234", "10:00", "7"));
-       ordersList.add(new Orders(date("2024-06-18"), "En proceso", "1234", "10:00", "8"));
-       ordersList.add(new Orders(date("2024-06-18"), "En proceso", "1234", "10:00", "9"));
-       ordersList.add(new Orders(date("2024-06-18"), "En proceso", "1234", "10:00", "10"));
+    public void init(){
+        // Inicializa la lista de visitas
+        List<Visits> visitsList = new ArrayList<>();
+        visitsList.add(new Visits(date("2024-06-18"), "En proceso", "1234", "10:00", "1"));
+        visitsList.add(new Visits(date("2024-06-18"), "En proceso", "1234", "10:00", "2"));
+        visitsList.add(new Visits(date("2024-06-18"), "En proceso", "1234", "10:00", "3"));
+        visitsList.add(new Visits(date("2024-06-18"), "En proceso", "1234", "10:00", "4"));
+        visitsList.add(new Visits(date("2024-06-18"), "En proceso", "1234", "10:00", "5"));
+        visitsList.add(new Visits(date("2024-06-18"), "En proceso", "1234", "10:00", "6"));
+        visitsList.add(new Visits(date("2024-06-18"), "En proceso", "1234", "10:00", "7"));
+        visitsList.add(new Visits(date("2024-06-18"), "En proceso", "1234", "10:00", "8"));
+        visitsList.add(new Visits(date("2024-06-18"), "En proceso", "1234", "10:00", "9"));
+        visitsList.add(new Visits(date("2024-06-18"), "En proceso", "1234", "10:00", "10"));
 
-
-       RecyclerView recyclerView = findViewById(R.id.recyclerViewOrders);
-       recyclerView.setLayoutManager(new LinearLayoutManager(this));
-       OrderAdapter orderAdapter = new OrderAdapter(ordersList, this);
-       recyclerView.setHasFixedSize(true);
-       recyclerView.setAdapter(orderAdapter);
-
+        // Encuentra el RecyclerView y configura el adaptador
+        RecyclerView recyclerView = findViewById(R.id.recyclerViewVisits);
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        VisitAdapter visitsAdapter = new VisitAdapter(visitsList, this);
+        recyclerView.setHasFixedSize(true);
+        recyclerView.setAdapter(visitsAdapter);
     }
 
+    // Convierte un string en una fecha
     public Date date(String dateStr) {
         SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
         try {
@@ -69,8 +73,8 @@ public class OrdersActivity extends AppCompatActivity {
             return date;
         } catch (ParseException e) {
             e.printStackTrace();
-            return null;
         }
+        return null;
     }
 
     public void footer() {
@@ -96,8 +100,9 @@ public class OrdersActivity extends AppCompatActivity {
         }
 
         btnVisits.setOnClickListener(v -> {
+            Log.d("footerActivity", "onClick: VisitsActivity");
             Intent intent = new Intent(this, VisitsActivity.class);
-            intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+            //intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
             startActivity(intent);
             finish();
         });
