@@ -6,6 +6,7 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -16,10 +17,22 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.Volley;
 import com.example.transmisiondigital.adapters.OrderAdapter;
+import com.example.transmisiondigital.globalVariables.Conexion;
 import com.example.transmisiondigital.includes.footerActivity;
 import com.example.transmisiondigital.models.Orders;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.UnsupportedEncodingException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -30,6 +43,7 @@ import java.util.List;
 public class OrdersActivity extends AppCompatActivity {
     private footerActivity footer;
     List<Orders> ordersList;
+    public String URL = Conexion.URL;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,23 +56,70 @@ public class OrdersActivity extends AppCompatActivity {
 
     public void init() {
        ordersList = new ArrayList<>();
-       ordersList.add(new Orders(date("2024-06-18"), "En proceso", "1234", "10:00", "1"));
-       ordersList.add(new Orders(date("2024-06-18"), "En proceso", "1234", "10:00", "2"));
-       ordersList.add(new Orders(date("2024-06-18"), "En proceso", "1234", "10:00", "3"));
-       ordersList.add(new Orders(date("2024-06-18"), "En proceso", "1234", "10:00", "4"));
-       ordersList.add(new Orders(date("2024-06-18"), "En proceso", "1234", "10:00", "5"));
-       ordersList.add(new Orders(date("2024-06-18"), "En proceso", "1234", "10:00", "6"));
-       ordersList.add(new Orders(date("2024-06-18"), "En proceso", "1234", "10:00", "7"));
-       ordersList.add(new Orders(date("2024-06-18"), "En proceso", "1234", "10:00", "8"));
-       ordersList.add(new Orders(date("2024-06-18"), "En proceso", "1234", "10:00", "9"));
-       ordersList.add(new Orders(date("2024-06-18"), "En proceso", "1234", "10:00", "10"));
 
+        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET, URL + "ordenes", null, response -> {
+            try {
+                JSONArray dataArray = response.getJSONArray("data");
+                for (int i = 0; i < dataArray.length(); i++) {
+                    Log.e("OrdersActivity", "init: " + dataArray.length());
+                    JSONObject order = dataArray.getJSONObject(i);
+                    String fechaHoraSolicitudStr = order.getString("fechaHoraSolicitud");
+                    SimpleDateFormat formatoOriginal = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                    // Formatos para fecha y hora
+                    SimpleDateFormat formatoFecha = new SimpleDateFormat("yyyy-MM-dd");
+                    SimpleDateFormat formatoHora = new SimpleDateFormat("HH:mm:ss");
+                    Date fechaHoraSolicitud = formatoOriginal.parse(fechaHoraSolicitudStr);
 
-       RecyclerView recyclerView = findViewById(R.id.recyclerViewOrders);
-       recyclerView.setLayoutManager(new LinearLayoutManager(this));
-       OrderAdapter orderAdapter = new OrderAdapter(ordersList, this);
-       recyclerView.setHasFixedSize(true);
-       recyclerView.setAdapter(orderAdapter);
+                    // Formatear a strings de fecha y hora
+                    String soloFecha = formatoFecha.format(fechaHoraSolicitud);
+                    String soloHora = formatoHora.format(fechaHoraSolicitud);
+                    String status = order.getString("estatus");
+                    String idOrder = order.getString("id");
+                    ordersList.add(new Orders(date(soloFecha), status, idOrder, soloHora, idOrder));
+                }
+                // Configurar y establecer el adaptador del RecyclerView aquí
+                RecyclerView recyclerView = findViewById(R.id.recyclerViewOrders);
+                recyclerView.setLayoutManager(new LinearLayoutManager(OrdersActivity.this));
+                OrderAdapter orderAdapter = new OrderAdapter(ordersList, OrdersActivity.this);
+                recyclerView.setHasFixedSize(true);
+                recyclerView.setAdapter(orderAdapter);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                // Obtener el mensaje de error de VolleyError
+                String mensajeError = "";
+
+                // Verificar si hay una respuesta de error
+                if (error.networkResponse != null && error.networkResponse.data != null) {
+                    try {
+                        // Convertir los datos de la respuesta de error a una cadena
+                        String responseData = new String(error.networkResponse.data, "UTF-8");
+                        // Convertir la cadena JSON a un objeto JSONObject
+                        JSONObject jsonObject = new JSONObject(responseData);
+                        // Obtener el mensaje de error del JSONObject
+                        mensajeError = jsonObject.optString("msg", "Error en la petición");
+                    } catch (UnsupportedEncodingException | JSONException e) {
+                        e.printStackTrace();
+                    }
+                } else {
+                    // Si no hay datos en la respuesta de error, mostrar un mensaje genérico
+                    mensajeError = "Error de red";
+                }
+
+                // Imprimir el mensaje de error en el registro (Log)
+                Log.e("Error", "Error en la petición: " + mensajeError);
+                //progressDialog.dismiss();
+                // Mostrar el mensaje de error en un cuadro de diálogo o Toast
+                Toast.makeText(OrdersActivity.this, mensajeError, Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        // Añadir la petición a la cola de solicitudes
+        RequestQueue queue = Volley.newRequestQueue(OrdersActivity.this);
+        queue.add(jsonObjectRequest);
 
     }
 
@@ -97,7 +158,7 @@ public class OrdersActivity extends AppCompatActivity {
 
         btnVisits.setOnClickListener(v -> {
             Intent intent = new Intent(this, VisitsActivity.class);
-            intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+            //intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
             startActivity(intent);
             finish();
         });
@@ -105,7 +166,7 @@ public class OrdersActivity extends AppCompatActivity {
         btnOrder.setOnClickListener(v -> {
             Log.d("footerActivity", "onClick: OrdersActivity");
             Intent intent = new Intent(this, OrdersActivity.class);
-            intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+            //intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
             startActivity(intent);
             finish();
         });
@@ -116,8 +177,9 @@ public class OrdersActivity extends AppCompatActivity {
 
         BtnAccount.setOnClickListener(v -> {
             Intent intent = new Intent(this, AccountActivity.class);
-            intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+            //intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
             startActivity(intent);
+            finish();
         });
     }
 }
