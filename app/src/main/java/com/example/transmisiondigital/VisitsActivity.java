@@ -67,7 +67,7 @@ public class VisitsActivity extends AppCompatActivity {
             try {
                 JSONArray dataArray = response.getJSONArray("data");
                 for (int i = 0; i < dataArray.length(); i++) {
-                    Log.e("OrdersActivity", "init: " + dataArray.length());
+                    Log.e("VisitsActivity", "init: " + dataArray.length());
                     JSONObject order = dataArray.getJSONObject(i);
                     String fechaHoraSolicitudStr = order.getString("fechaHoraSolicitud");
                     SimpleDateFormat formatoOriginal = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");

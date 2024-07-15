@@ -27,6 +27,9 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.UnsupportedEncodingException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 public class VisitActivity extends AppCompatActivity {
 
@@ -37,6 +40,8 @@ public class VisitActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_visit);
+        TextView textViewTitle = findViewById(R.id.textViewTitle);
+        textViewTitle.setText("VISITAS");
         Intent intent = getIntent();
         idVisit = intent.getStringExtra("idVisit");
         footer();
@@ -63,18 +68,31 @@ public class VisitActivity extends AppCompatActivity {
                 String clienteNombre = data.getJSONObject("cliente").getString("nombre");
                 String tecnicoNombre = data.getJSONObject("tecnico").getString("nombre");
 
-                textViewFolio.setText(data.getString("folio"));
-                textViewDate.setText(data.getString("fechaHoraSolicitud"));
-                textViewHour.setText(data.getString("horaSolicitud"));
-                textViewAddress.setText(data.getString("direccion"));
-                textViewCustomer.setText(clienteNombre);
-                textViewTechnical.setText(tecnicoNombre);
-                textViewApplicant.setText(data.getString("solicitante"));
-                textViewPosition.setText(data.getString("cargo"));
-                textViewStatus.setText(data.getString("estatus"));
-                textViewEntryTime.setText(data.getString("horaEntrada"));
+                String fechaHoraSolicitudStr = data.getString("fechaHoraSolicitud");
+                String fechaHoraLlegadaStr = data.getString("fechaHoraLlegada");
+                SimpleDateFormat formatoOriginal = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                SimpleDateFormat formatoFecha = new SimpleDateFormat("yyyy-MM-dd");
+                SimpleDateFormat formatoHora = new SimpleDateFormat("HH:mm:ss");
+
+                Date fechaHoraSolicitud = formatoOriginal.parse(fechaHoraSolicitudStr);
+                Date fechaHoraLlegada = formatoOriginal.parse(fechaHoraLlegadaStr);
+                String fechaSolicitud = formatoFecha.format(fechaHoraSolicitud);
+                String horaSolicitud = formatoHora.format(fechaHoraSolicitud);
+                String horaLlegada = formatoHora.format(fechaHoraLlegada);
+
+
+                textViewFolio.setText("Folio: " + data.getString("id"));
+                textViewDate.setText("Fecha: " + fechaSolicitud);
+                textViewHour.setText("Hora: "+ horaSolicitud);
+                textViewAddress.setText("Dirección: " + data.getString("direccion"));
+                textViewCustomer.setText("Cliente: " + clienteNombre);
+                textViewTechnical.setText("Tecnico: " + tecnicoNombre);
+                textViewStatus.setText("Estatus: " + data.getString("estatus"));
+                textViewEntryTime.setText("Hora de llegada: " + horaLlegada);
             } catch (JSONException e) {
                 e.printStackTrace();
+            } catch (ParseException e) {
+                throw new RuntimeException(e);
             }
         }, error -> {
             try {
