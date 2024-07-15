@@ -32,16 +32,18 @@ import java.util.Map;
 
 public class AccountActivity extends AppCompatActivity {
 
-    private Button buttonLogout;
+    private Button buttonLogout, buttonGenerateCode;
     private ProgressDialog progressDialog;
     private String URL = Conexion.URL;
-    private TextView textViewUserName, textViewUserRol;
+    private TextView textViewUserName, textViewUserRol, textViewCode;
+    private View bottomLineCode;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_account);
 
         buttonLogout = findViewById(R.id.buttonLogout);
+        buttonGenerateCode = findViewById(R.id.buttonGenerateCode);
 
         SharedPreferences sharedPreferences = getSharedPreferences("sessionUser", Context.MODE_PRIVATE);
         String token = sharedPreferences.getString("token", null);
@@ -51,6 +53,8 @@ public class AccountActivity extends AppCompatActivity {
 
         textViewUserName = findViewById(R.id.textViewUserName);
         textViewUserRol = findViewById(R.id.textViewUserRol);
+        textViewCode = findViewById(R.id.textViewCode);
+        bottomLineCode = findViewById(R.id.bottomLineCode);
 
         textViewUserName.setText(name);
         textViewUserRol.setText(rol);
@@ -76,8 +80,7 @@ public class AccountActivity extends AppCompatActivity {
                         // Guardar el token de autenticación en SharedPreferences
                         SharedPreferences sharedPreferences = getSharedPreferences("sessionUser", Context.MODE_PRIVATE);
                         SharedPreferences.Editor editor = sharedPreferences.edit();
-                        editor.remove("token");
-                        editor.remove("idUsuario");
+                        editor.clear();
                         editor.apply();
 
                         // Manejar el token según sea necesario
@@ -130,6 +133,64 @@ public class AccountActivity extends AppCompatActivity {
             // Añadir la petición a la cola de solicitudes
             RequestQueue queue = Volley.newRequestQueue(AccountActivity.this);
             queue.add(request);
+        });
+
+        buttonGenerateCode.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                progressDialog = new ProgressDialog(AccountActivity.this);
+                progressDialog.setMessage("Obteniendo codigo...");
+                progressDialog.show();
+                String url = URL + "generateCode/" + idUser;
+
+                JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST, url, null, new Response.Listener<JSONObject>() {
+                    @Override
+                    public void onResponse(JSONObject response) {
+                        try {
+                            Log.d("response", String.valueOf(response));
+                            String code = response.getString("code");
+                            textViewCode.setVisibility(View.VISIBLE);
+                            bottomLineCode.setVisibility(View.VISIBLE);
+                            textViewCode.setText(code);
+                            progressDialog.dismiss();
+                        } catch (JSONException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                }, new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        // Obtener el mensaje de error de VolleyError
+                        String mensajeError = "";
+
+                        // Verificar si hay una respuesta de error
+                        if (error.networkResponse != null && error.networkResponse.data != null) {
+                            try {
+                                // Convertir los datos de la respuesta de error a una cadena
+                                mensajeError = new String(error.networkResponse.data, "UTF-8");
+                                // Convertir la cadena JSON a un objeto JSONObject
+                                JSONObject jsonObject = new JSONObject(mensajeError);
+                                // Obtener el mensaje de error del JSONObject
+                                mensajeError = jsonObject.getString("msg"); // Cambiado "mensaje" por "msg"
+                            } catch (UnsupportedEncodingException | JSONException e) {
+                                e.printStackTrace();
+                            }
+                        } else {
+                            // Si no hay datos en la respuesta de error, mostrar un mensaje genérico
+                            mensajeError = "net";
+                        }
+
+                        // Imprimir el mensaje de error en el registro (Log)
+                        Log.e("Error", "Error en la petición: " + mensajeError);
+                        progressDialog.dismiss();
+                        // Mostrar el mensaje de error en un cuadro de diálogo o Toast
+                        Toast.makeText(AccountActivity.this, mensajeError, Toast.LENGTH_SHORT).show();
+                    }
+                });
+                // Añadir la petición a la cola de solicitudes
+                RequestQueue queue = Volley.newRequestQueue(AccountActivity.this);
+                queue.add(request);
+            }
         });
     }
 
