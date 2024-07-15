@@ -50,7 +50,7 @@
         android:layout_height="wrap_content"
         android:text="Juanito"
         android:textColor="@color/baseColor"
-        app:layout_constraintBottom_toTopOf="@+id/buttonCerrarSesion"
+        app:layout_constraintBottom_toTopOf="@+id/buttonLogout"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.133"
         app:layout_constraintStart_toEndOf="@+id/imageView3"
@@ -71,7 +71,7 @@
         app:layout_constraintVertical_bias="0.077" />
 
     <Button
-        android:id="@+id/buttonCerrarSesion"
+        android:id="@+id/buttonLogout"
         android:layout_width="180dp"
         android:layout_height="60dp"
         android:background="@drawable/button_border"
@@ -90,7 +90,7 @@
         android:layout_height="match_parent"
         android:layout_marginTop="15dp"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/buttonCerrarSesion" />
+        app:layout_constraintTop_toBottomOf="@id/buttonLogout" />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

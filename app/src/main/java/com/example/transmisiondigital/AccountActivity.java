@@ -1,6 +1,7 @@
 package com.example.transmisiondigital;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.constraintlayout.widget.ConstraintLayout;
 
 import android.app.ProgressDialog;
 import android.content.Context;
@@ -8,6 +9,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
@@ -29,7 +31,7 @@ import java.util.Map;
 
 public class AccountActivity extends AppCompatActivity {
 
-    private Button btnCerrarSesion;
+    private Button buttonLogout;
     private ProgressDialog progressDialog;
     private String URL = Conexion.URL;
     @Override
@@ -37,24 +39,27 @@ public class AccountActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_account);
 
-
-        //btnCerrarSesion = findViewById(R.id.btnCerrarSesion);
+        buttonLogout = findViewById(R.id.buttonLogout);
 
         SharedPreferences sharedPreferences = getSharedPreferences("sessionUser", Context.MODE_PRIVATE);
         String token = sharedPreferences.getString("token", null);
         Integer idUser = sharedPreferences.getInt("idUser", 0);
 
-        btnCerrarSesion.setOnClickListener(v -> {
+        footer();
+        buttonLogout.setOnClickListener(v -> {
+            progressDialog = new ProgressDialog(AccountActivity.this);
+            progressDialog.setMessage("Cerrando sesión...");
+            progressDialog.show();
             String url = URL + "logout";
-            JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST, url, null, new Response.Listener<JSONObject>() {
+            JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, url, null, new Response.Listener<JSONObject>() {
                 @Override
                 public void onResponse(JSONObject response) {
                     // Manejar la respuesta del servidor
-                    try {
-                        // Extraer el token del objeto JSON
-                        String token = response.getString("token");
 
-                        JSONObject usuario = response.getJSONObject("usuario");
+                        // Extraer el token del objeto JSON
+                        //String token = response.getString("token");
+
+                        //JSONObject usuario = response.getJSONObject("usuario");
 
                         // Guardar el token de autenticación en SharedPreferences
                         SharedPreferences sharedPreferences = getSharedPreferences("sessionUser", Context.MODE_PRIVATE);
@@ -64,16 +69,12 @@ public class AccountActivity extends AppCompatActivity {
                         editor.apply();
 
                         // Manejar el token según sea necesario
-                        Log.d("Token", "Token obtenido: " + token);
+                        //Log.d("Token", "Token obtenido: " + token);
                         progressDialog.dismiss();
 
                         Intent intent = new Intent(AccountActivity.this, MainActivity.class);
                         startActivity(intent);
                         finish();
-
-                    } catch (JSONException e) {
-                        e.printStackTrace();
-                    }
                 }
             }, new Response.ErrorListener() {
                 @Override
@@ -117,6 +118,55 @@ public class AccountActivity extends AppCompatActivity {
             // Añadir la petición a la cola de solicitudes
             RequestQueue queue = Volley.newRequestQueue(AccountActivity.this);
             queue.add(request);
+        });
+    }
+
+    public void footer() {
+        SharedPreferences sharedPreferences = getSharedPreferences("sessionUser", Context.MODE_PRIVATE);
+        String token = sharedPreferences.getString("token", null);
+
+        ConstraintLayout btnVisits = findViewById(R.id.imageButtonVisits);
+        ConstraintLayout btnOrder = findViewById(R.id.imageButtonOrders);
+        ConstraintLayout btnCalendar = findViewById(R.id.imageButtonCalendar);
+        ConstraintLayout BtnAccount = findViewById(R.id.imageButtonAccount);
+
+        // Verifica si el token es nulo o vacío
+        if (token == null || token.isEmpty()) {
+            btnVisits.setVisibility(View.GONE);
+            btnOrder.setVisibility(View.GONE);
+            btnCalendar.setVisibility(View.GONE);
+            BtnAccount.setVisibility(View.GONE);
+        } else {
+            btnVisits.setVisibility(View.VISIBLE);
+            btnOrder.setVisibility(View.VISIBLE);
+            btnCalendar.setVisibility(View.VISIBLE);
+            BtnAccount.setVisibility(View.VISIBLE);
+        }
+
+        btnVisits.setOnClickListener(v -> {
+            Intent intent = new Intent(this, VisitsActivity.class);
+            //intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+            startActivity(intent);
+            finish();
+        });
+
+        btnOrder.setOnClickListener(v -> {
+            Log.d("footerActivity", "onClick: OrdersActivity");
+            Intent intent = new Intent(this, OrdersActivity.class);
+            //intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+            startActivity(intent);
+            finish();
+        });
+
+        btnCalendar.setOnClickListener(v -> {
+
+        });
+
+        BtnAccount.setOnClickListener(v -> {
+            Intent intent = new Intent(this, AccountActivity.class);
+            //intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+            startActivity(intent);
+            finish();
         });
     }
 }
