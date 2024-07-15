@@ -1,5 +1,7 @@
 package com.example.transmisiondigital;
 
+import static com.example.transmisiondigital.globalVariables.Conexion.URL;
+
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -7,6 +9,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -17,10 +20,23 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.Volley;
+import com.example.transmisiondigital.adapters.OrderAdapter;
 import com.example.transmisiondigital.adapters.VisitAdapter;
 import com.example.transmisiondigital.includes.footerActivity;
+import com.example.transmisiondigital.models.Orders;
 import com.example.transmisiondigital.models.Visits;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.UnsupportedEncodingException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -46,23 +62,70 @@ public class VisitsActivity extends AppCompatActivity {
     public void init(){
         // Inicializa la lista de visitas
         List<Visits> visitsList = new ArrayList<>();
-        visitsList.add(new Visits(date("2024-06-18"), "En proceso", "1234", "10:00", "1"));
-        visitsList.add(new Visits(date("2024-06-18"), "En proceso", "1234", "10:00", "2"));
-        visitsList.add(new Visits(date("2024-06-18"), "En proceso", "1234", "10:00", "3"));
-        visitsList.add(new Visits(date("2024-06-18"), "En proceso", "1234", "10:00", "4"));
-        visitsList.add(new Visits(date("2024-06-18"), "En proceso", "1234", "10:00", "5"));
-        visitsList.add(new Visits(date("2024-06-18"), "En proceso", "1234", "10:00", "6"));
-        visitsList.add(new Visits(date("2024-06-18"), "En proceso", "1234", "10:00", "7"));
-        visitsList.add(new Visits(date("2024-06-18"), "En proceso", "1234", "10:00", "8"));
-        visitsList.add(new Visits(date("2024-06-18"), "En proceso", "1234", "10:00", "9"));
-        visitsList.add(new Visits(date("2024-06-18"), "En proceso", "1234", "10:00", "10"));
 
-        // Encuentra el RecyclerView y configura el adaptador
-        RecyclerView recyclerView = findViewById(R.id.recyclerViewVisits);
-        recyclerView.setLayoutManager(new LinearLayoutManager(this));
-        VisitAdapter visitsAdapter = new VisitAdapter(visitsList, this);
-        recyclerView.setHasFixedSize(true);
-        recyclerView.setAdapter(visitsAdapter);
+        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET, URL + "visitas", null, response -> {
+            try {
+                JSONArray dataArray = response.getJSONArray("data");
+                for (int i = 0; i < dataArray.length(); i++) {
+                    Log.e("OrdersActivity", "init: " + dataArray.length());
+                    JSONObject order = dataArray.getJSONObject(i);
+                    String fechaHoraSolicitudStr = order.getString("fechaHoraSolicitud");
+                    SimpleDateFormat formatoOriginal = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                    // Formatos para fecha y hora
+                    SimpleDateFormat formatoFecha = new SimpleDateFormat("yyyy-MM-dd");
+                    SimpleDateFormat formatoHora = new SimpleDateFormat("HH:mm:ss");
+                    Date fechaHoraSolicitud = formatoOriginal.parse(fechaHoraSolicitudStr);
+
+                    // Formatear a strings de fecha y hora
+                    String soloFecha = formatoFecha.format(fechaHoraSolicitud);
+                    String soloHora = formatoHora.format(fechaHoraSolicitud);
+                    String status = order.getString("estatus");
+                    String idVisit = order.getString("id");
+                    visitsList.add(new Visits(date(soloFecha), status, idVisit, soloHora, idVisit));
+                }
+                // Configurar y establecer el adaptador del RecyclerView aquí
+                RecyclerView recyclerView = findViewById(R.id.recyclerViewVisits);
+                recyclerView.setLayoutManager(new LinearLayoutManager(this));
+                VisitAdapter visitsAdapter = new VisitAdapter(visitsList, this);
+                recyclerView.setHasFixedSize(true);
+                recyclerView.setAdapter(visitsAdapter);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                // Obtener el mensaje de error de VolleyError
+                String mensajeError = "";
+
+                // Verificar si hay una respuesta de error
+                if (error.networkResponse != null && error.networkResponse.data != null) {
+                    try {
+                        // Convertir los datos de la respuesta de error a una cadena
+                        String responseData = new String(error.networkResponse.data, "UTF-8");
+                        // Convertir la cadena JSON a un objeto JSONObject
+                        JSONObject jsonObject = new JSONObject(responseData);
+                        // Obtener el mensaje de error del JSONObject
+                        mensajeError = jsonObject.optString("msg", "Error en la petición");
+                    } catch (UnsupportedEncodingException | JSONException e) {
+                        e.printStackTrace();
+                    }
+                } else {
+                    // Si no hay datos en la respuesta de error, mostrar un mensaje genérico
+                    mensajeError = "Error de red";
+                }
+
+                // Imprimir el mensaje de error en el registro (Log)
+                Log.e("Error", "Error en la petición: " + mensajeError);
+                //progressDialog.dismiss();
+                // Mostrar el mensaje de error en un cuadro de diálogo o Toast
+                Toast.makeText(VisitsActivity.this, mensajeError, Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        // Añadir la petición a la cola de solicitudes
+        RequestQueue queue = Volley.newRequestQueue(VisitsActivity.this);
+        queue.add(jsonObjectRequest);
     }
 
     // Convierte un string en una fecha
@@ -110,7 +173,7 @@ public class VisitsActivity extends AppCompatActivity {
         btnOrder.setOnClickListener(v -> {
             Log.d("footerActivity", "onClick: OrdersActivity");
             Intent intent = new Intent(this, OrdersActivity.class);
-            intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+            //intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
             startActivity(intent);
             finish();
         });
@@ -121,8 +184,9 @@ public class VisitsActivity extends AppCompatActivity {
 
         BtnAccount.setOnClickListener(v -> {
             Intent intent = new Intent(this, AccountActivity.class);
-            intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+            //intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
             startActivity(intent);
+            finish();
         });
     }
 }
