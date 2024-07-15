@@ -11,6 +11,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.android.volley.AuthFailureError;
@@ -34,6 +35,7 @@ public class AccountActivity extends AppCompatActivity {
     private Button buttonLogout;
     private ProgressDialog progressDialog;
     private String URL = Conexion.URL;
+    private TextView textViewUserName, textViewUserRol;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -44,13 +46,23 @@ public class AccountActivity extends AppCompatActivity {
         SharedPreferences sharedPreferences = getSharedPreferences("sessionUser", Context.MODE_PRIVATE);
         String token = sharedPreferences.getString("token", null);
         Integer idUser = sharedPreferences.getInt("idUser", 0);
+        String name = sharedPreferences.getString("userName", null);
+        String rol = sharedPreferences.getString("rol", null);
+
+        textViewUserName = findViewById(R.id.textViewUserName);
+        textViewUserRol = findViewById(R.id.textViewUserRol);
+
+        textViewUserName.setText(name);
+        textViewUserRol.setText(rol);
 
         footer();
+
         buttonLogout.setOnClickListener(v -> {
             progressDialog = new ProgressDialog(AccountActivity.this);
             progressDialog.setMessage("Cerrando sesión...");
             progressDialog.show();
             String url = URL + "logout";
+
             JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, url, null, new Response.Listener<JSONObject>() {
                 @Override
                 public void onResponse(JSONObject response) {
@@ -151,7 +163,6 @@ public class AccountActivity extends AppCompatActivity {
         });
 
         btnOrder.setOnClickListener(v -> {
-            Log.d("footerActivity", "onClick: OrdersActivity");
             Intent intent = new Intent(this, OrdersActivity.class);
             //intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
             startActivity(intent);

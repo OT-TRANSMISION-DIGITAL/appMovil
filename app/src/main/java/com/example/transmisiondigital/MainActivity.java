@@ -38,6 +38,7 @@ public class MainActivity extends AppCompatActivity {
     private Button btnLogin;
     private ProgressDialog progressDialog;
     private String URL = Conexion.URL;
+    private String rol;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -105,17 +106,28 @@ public class MainActivity extends AppCompatActivity {
                                 // Extraer el objeto "usuario" del objeto JSON
                                 JSONObject usuario = response.getJSONObject("usuario");
                                 // Extraer el nombre del objeto "usuario"
+                                Integer idUser = usuario.getInt("id");
                                 String userName = usuario.getString("nombre");
+                                Integer idRol = usuario.getInt("rol_id");
+                                if(idRol == 1){
+                                    rol = "Administrador";
+                                }
+                                if(idRol == 3){
+                                    rol = "Técnico";
+                                }
 
                                 // Guardar el token de autenticación en SharedPreferences
                                 SharedPreferences sharedPreferences = getSharedPreferences("sessionUser", Context.MODE_PRIVATE);
                                 SharedPreferences.Editor editor = sharedPreferences.edit();
                                 editor.putString("token", token);
-                                editor.putInt("idUser", usuario.getInt("id"));
+                                editor.putString("userName", userName);
+                                editor.putInt("idUser", idUser);
+                                editor.putInt("idRol", idRol);
+                                editor.putString("rol", rol);
                                 editor.apply();
                                 progressDialog.dismiss();
 
-                                Intent intent = new Intent(MainActivity.this, TecnicoMainActivity.class);
+                                Intent intent = new Intent(MainActivity.this, OrdersActivity.class);
                                 intent.putExtra("userName", userName);
                                 startActivity(intent);
                                 finish();

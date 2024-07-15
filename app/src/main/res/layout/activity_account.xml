@@ -18,7 +18,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.141"
-        tools:srcCompat="@drawable/usuario" />
+        android:src="@drawable/usuario" />
 
     <TextView
         android:id="@+id/textView4"
@@ -45,7 +45,7 @@
         app:layout_constraintVertical_bias="0.100" />
 
     <TextView
-        android:id="@+id/textViewNombre"
+        android:id="@+id/textViewUserName"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Juanito"
@@ -58,7 +58,7 @@
         app:layout_constraintVertical_bias="0.192" />
 
     <TextView
-        android:id="@+id/textViewRol"
+        android:id="@+id/textViewUserRol"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Tecnico"
@@ -67,7 +67,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.135"
         app:layout_constraintStart_toEndOf="@+id/imageView3"
-        app:layout_constraintTop_toBottomOf="@+id/textViewNombre"
+        app:layout_constraintTop_toBottomOf="@+id/textViewUserName"
         app:layout_constraintVertical_bias="0.077" />
 
     <Button
