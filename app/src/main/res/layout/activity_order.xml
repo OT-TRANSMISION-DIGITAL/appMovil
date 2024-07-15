@@ -174,9 +174,9 @@
             android:layout_marginTop="15dp"
             android:textColor="@color/black"
             android:textSize="20dp"
-            android:text="Servicios" />
+            android:text="Productos" />
 
-        <TextView
+        <LinearLayout
             android:id="@+id/textViewService1"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -185,44 +185,10 @@
             android:layout_marginStart="25dp"
             android:layout_marginTop="15dp"
             android:textColor="@color/black"
+            android:orientation="vertical"
             android:textSize="20dp"
-            android:text="1- Servicio" />
+            android:text="" />
 
-        <TextView
-            android:id="@+id/textViewService2"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/textViewService1"
-            app:layout_constraintStart_toStartOf="parent"
-            android:layout_marginStart="25dp"
-            android:layout_marginTop="15dp"
-            android:textColor="@color/black"
-            android:textSize="20dp"
-            android:text="2- Servicio" />
-
-        <TextView
-            android:id="@+id/textViewService3"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/textViewService2"
-            app:layout_constraintStart_toStartOf="parent"
-            android:layout_marginStart="25dp"
-            android:layout_marginTop="15dp"
-            android:textColor="@color/black"
-            android:textSize="20dp"
-            android:text="3- Servicio" />
-
-        <TextView
-            android:id="@+id/textViewTotal"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/textViewService3"
-            app:layout_constraintStart_toStartOf="parent"
-            android:layout_marginStart="25dp"
-            android:layout_marginTop="15dp"
-            android:textColor="@color/black"
-            android:textSize="20dp"
-            android:text="Total : $1500.00" />
 
         <View
             android:id="@+id/bottomLine"
@@ -232,7 +198,7 @@
             android:layout_marginStart="25dp"
             android:layout_marginEnd="25dp"
             android:background="@color/baseColor"
-            app:layout_constraintTop_toBottomOf="@+id/textViewTotal" />
+            app:layout_constraintTop_toBottomOf="@+id/textViewService1" />
 
         <include
             android:id="@+id/includeFooter"

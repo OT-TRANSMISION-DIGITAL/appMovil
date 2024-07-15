@@ -8,6 +8,7 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -28,11 +29,15 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.UnsupportedEncodingException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 public class OrderActivity extends AppCompatActivity {
 
     private String idOrder;
     private TextView textViewFolio, textViewDate, textViewHour, textViewAddress, textViewCustomer;
+    private LinearLayout container;
     private TextView textViewTechnical, textViewApplicant, textViewPosition, textViewStatus, textViewEntryTime, textViewDepartureTime, textViewTotal;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -52,41 +57,72 @@ public class OrderActivity extends AppCompatActivity {
         textViewStatus = findViewById(R.id.textViewStatus);
         textViewEntryTime = findViewById(R.id.textViewEntryTime);
         textViewDepartureTime = findViewById(R.id.textViewDepartureTime);
-        textViewTotal = findViewById(R.id.textViewTotal);
+        //textViewTotal = findViewById(R.id.textViewTotal);
+        container = findViewById(R.id.textViewService1);
         init();
 
     }
 
-    public void init(){
+    public void init() {
         JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET, URL + "ordenes/" + idOrder, null, response -> {
             try {
                 // Obtener el objeto JSON de la respuesta
                 JSONObject data = response;
-
-
+                JSONArray detallesArray = data.getJSONArray("detalles");
                 String clienteNombre = data.getJSONObject("cliente").getString("nombre");
                 String tecnicoNombre = data.getJSONObject("tecnico").getString("nombre");
-                String sucursalNombre = data.getJSONObject("sucursal").getString("nombre");
 
-                // Imprimir los nombres en el log (puedes usar estos nombres según sea necesario)
-                Log.d("OrderActivity", "Cliente: " + clienteNombre);
-                Log.d("OrderActivity", "Técnico: " + tecnicoNombre);
-                Log.d("OrderActivity", "Sucursal: " + sucursalNombre);
+                String fechaHoraSolicitudStr = data.getString("fechaHoraSolicitud");
+                String fechaHoraLLegadaStr = data.getString("fechaHoraLlegada");
+                String fechaHoraSalidaStr = data.getString("fechaHoraSalida");
 
-               textViewFolio.setText(data.getString("folio"));
-                textViewDate.setText(data.getString("fechaHoraSolicitud"));
-                textViewHour.setText(data.getString("horaSolicitud"));
-                textViewAddress.setText(data.getString("direccion"));
-                textViewCustomer.setText(clienteNombre);
-                textViewTechnical.setText(tecnicoNombre);
-                textViewApplicant.setText(data.getString("solicitante"));
-                textViewPosition.setText(data.getString("cargo"));
-                textViewStatus.setText(data.getString("estatus"));
-                textViewEntryTime.setText(data.getString("horaEntrada"));
-                textViewDepartureTime.setText(data.getString("horaSalida"));
-                textViewTotal.setText(data.getString("total"));
+                SimpleDateFormat formatoOriginal = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                SimpleDateFormat formatoFecha = new SimpleDateFormat("yyyy-MM-dd");
+                SimpleDateFormat formatoHora = new SimpleDateFormat("HH:mm:ss");
+                Date fechaHoraSolicitud = formatoOriginal.parse(fechaHoraSolicitudStr);
+                Date fechaHoraLLegada = formatoOriginal.parse(fechaHoraLLegadaStr);
+                Date fechaHoraSalida = formatoOriginal.parse(fechaHoraSalidaStr);
+
+                // Formatear a strings de fecha y hora
+                String soloFecha = formatoFecha.format(fechaHoraSolicitud);
+                String soloHora = formatoHora.format(fechaHoraSolicitud);
+                String horaLLegada = formatoHora.format(fechaHoraLLegada);
+                String horaSalida = formatoHora.format(fechaHoraSalida);
+
+                textViewFolio.setText("Folio: "+ data.getString("id"));
+                textViewDate.setText("Fecha: " + soloFecha);
+                textViewHour.setText("Hora: " + soloHora);
+                textViewAddress.setText("Dirección: " + data.getString("direccion"));
+                textViewCustomer.setText("Cliente: " + clienteNombre);
+                textViewTechnical.setText("Tecnico: " + tecnicoNombre);
+                textViewApplicant.setText("Persona que solicita: " + data.getString("persona_solicitante"));
+                textViewPosition.setText("Puesto: " + data.getString("puesto"));
+                textViewStatus.setText("Estatus: " + data.getString("estatus"));
+                textViewEntryTime.setText("Hora de llegada: " + horaLLegada);
+                textViewDepartureTime.setText("Hora de salida: " + horaSalida);
+
+                for (int i = 0; i < detallesArray.length(); i++) {
+                    JSONObject detalle = detallesArray.getJSONObject(i);
+
+                    // Obtén el objeto "producto"
+                    JSONObject producto = detalle.getJSONObject("producto");
+
+                    // Obtén el nombre del producto
+                    String nombre = producto.getString("nombre");
+
+                    TextView textView = new TextView(this);
+                    textView.setText((i+1) + ".- "  + nombre);
+                    textView.setTextSize(18);
+                    textView.setPadding(16, 16, 16, 16);
+
+                    // Agregar el TextView al contenedor
+                    container.addView(textView);
+                    // Agrega el nombre a la lista
+                }
             } catch (JSONException e) {
                 e.printStackTrace();
+            } catch (ParseException e) {
+                throw new RuntimeException(e);
             }
         }, error -> {
             try {
