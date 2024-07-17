@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".CuentaActivity"
+    tools:context=".AccountActivity"
     android:background="@color/background"
     >
 
@@ -18,7 +19,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.141"
-        tools:srcCompat="@drawable/usuario" />
+        android:src="@drawable/usuario" />
 
     <TextView
         android:id="@+id/textView4"
@@ -45,12 +46,12 @@
         app:layout_constraintVertical_bias="0.100" />
 
     <TextView
-        android:id="@+id/textViewNombre"
+        android:id="@+id/textViewUserName"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Juanito"
+        android:text="Usuario: Juanito"
         android:textColor="@color/baseColor"
-        app:layout_constraintBottom_toTopOf="@+id/buttonCerrarSesion"
+        app:layout_constraintBottom_toTopOf="@+id/buttonLogout"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.133"
         app:layout_constraintStart_toEndOf="@+id/imageView3"
@@ -58,20 +59,57 @@
         app:layout_constraintVertical_bias="0.192" />
 
     <TextView
-        android:id="@+id/textViewRol"
+        android:id="@+id/textViewUserRol"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Tecnico"
+        android:text="Rol: Tecnico"
         android:textColor="@color/baseColor"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.135"
         app:layout_constraintStart_toEndOf="@+id/imageView3"
-        app:layout_constraintTop_toBottomOf="@+id/textViewNombre"
+        app:layout_constraintTop_toBottomOf="@+id/textViewUserName"
         app:layout_constraintVertical_bias="0.077" />
 
     <Button
-        android:id="@+id/buttonCerrarSesion"
+        android:id="@+id/buttonGenerateCode"
+        android:layout_width="180dp"
+        android:layout_height="60dp"
+        android:background="@drawable/button_border"
+        android:text="Generar codigo"
+        android:textColor="@color/baseColor"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/imageView3"
+        app:layout_constraintVertical_bias="0.1" />
+
+    <TextView
+        android:id="@+id/textViewCode"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="2087"
+        android:textColor="@color/baseColor"
+        android:textSize="30dp"
+        android:visibility="gone"
+        app:layout_constraintBottom_toTopOf="@+id/buttonLogout"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/buttonGenerateCode" />
+
+    <View
+        android:id="@+id/bottomLineCode"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginTop="0dp"
+        android:layout_marginStart="100dp"
+        android:layout_marginEnd="100dp"
+        android:background="@color/baseColor"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@+id/textViewCode" />
+
+    <Button
+        android:id="@+id/buttonLogout"
         android:layout_width="180dp"
         android:layout_height="60dp"
         android:background="@drawable/button_border"
@@ -80,8 +118,17 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/imageView3"
-        app:layout_constraintVertical_bias="0.091" />
+        android:layout_marginBottom="130dp"
+        />
+
+    <include
+        android:id="@+id/includeFooter"
+        layout="@layout/activity_footer"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginTop="15dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/buttonLogout" />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

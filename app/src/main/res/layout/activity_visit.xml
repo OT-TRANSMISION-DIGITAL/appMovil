@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/white"
+    tools:context=".OrderActivity">
+
+        <include
+            android:id="@+id/includeHeader"
+            layout="@layout/activity_header"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <View
+            android:id="@+id/topLine"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginTop="5dp"
+            android:layout_marginStart="25dp"
+            android:layout_marginEnd="25dp"
+            android:background="@color/baseColor"
+            app:layout_constraintTop_toBottomOf="@+id/includeHeader" />
+
+        <TextView
+            android:id="@+id/textViewFolio"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/topLine"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="15dp"
+            android:textColor="@color/black"
+            android:textSize="20dp"
+            android:text="Folio: 1234"
+            tools:layout_editor_absoluteX="179dp"
+            tools:layout_editor_absoluteY="208dp" />
+
+        <TextView
+            android:id="@+id/textViewDate"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/textViewFolio"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginStart="25dp"
+            android:layout_marginTop="15dp"
+            android:textColor="@color/black"
+            android:textSize="20dp"
+            android:text="Fecha: 24/05/2024" />
+
+
+        <TextView
+            android:id="@+id/textViewHour"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/textViewDate"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginStart="25dp"
+            android:layout_marginTop="15dp"
+            android:textColor="@color/black"
+            android:textSize="20dp"
+            android:text="Hora: 12:52" />
+
+        <TextView
+            android:id="@+id/textViewAddress"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/textViewHour"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginStart="25dp"
+            android:layout_marginTop="15dp"
+            android:textColor="@color/black"
+            android:textSize="20dp"
+            android:text="Direccion: Matayork" />
+
+        <TextView
+            android:id="@+id/textViewCustomer"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/textViewAddress"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginStart="25dp"
+            android:layout_marginTop="15dp"
+            android:textColor="@color/black"
+            android:textSize="20dp"
+            android:text="Cliente: Eder Meza" />
+
+        <TextView
+            android:id="@+id/textViewTechnical"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/textViewCustomer"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginStart="25dp"
+            android:layout_marginTop="15dp"
+            android:textColor="@color/black"
+            android:textSize="20dp"
+            android:text="Tecnico: Eder Meza" />
+
+
+        <TextView
+            android:id="@+id/textViewStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/textViewTechnical"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginStart="25dp"
+            android:layout_marginTop="15dp"
+            android:textColor="@color/black"
+            android:textSize="20dp"
+            android:text="Estatus: Pendiente" />
+
+        <TextView
+            android:id="@+id/textViewEntryTime"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/textViewStatus"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginStart="25dp"
+            android:layout_marginTop="15dp"
+            android:textColor="@color/black"
+            android:textSize="20dp"
+            android:text="Hora Llegada: 1:00" />
+
+        <View
+            android:id="@+id/bottomLine"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginTop="50dp"
+            android:layout_marginStart="25dp"
+            android:layout_marginEnd="25dp"
+            android:background="@color/baseColor"
+            app:layout_constraintTop_toBottomOf="@+id/textViewEntryTime" />
+
+        <include
+            android:id="@+id/includeFooter"
+            layout="@layout/activity_footer"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintBottom_toBottomOf="parent" />
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>

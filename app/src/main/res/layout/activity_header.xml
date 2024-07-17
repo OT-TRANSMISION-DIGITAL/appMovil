@@ -3,15 +3,16 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    tools:context=".headerActivity">
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    tools:context=".includes.headerActivity">
 
     <TextView
         android:id="@+id/textViewName"
         android:layout_width="175dp"
         android:layout_height="60dp"
         android:layout_marginStart="5dp"
+        android:layout_marginTop="16dp"
         android:gravity="start|center"
         android:text="Eder"
         android:textColor="@color/baseColor"
@@ -22,13 +23,14 @@
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toEndOf="@+id/imageButtonProfile"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.023" />
+        app:layout_constraintVertical_bias="0.0" />
 
 
     <ImageButton
         android:id="@+id/imageButtonProfile"
         android:layout_width="60dp"
         android:layout_height="60dp"
+        android:layout_marginTop="16dp"
         android:background="@null"
         android:scaleType="centerCrop"
         android:src="@drawable/usuario"
@@ -38,45 +40,48 @@
         app:layout_constraintHorizontal_bias="0.045"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.023" />
+        app:layout_constraintVertical_bias="0.0" />
 
     <View
         android:id="@+id/viewLineTop"
         android:layout_width="match_parent"
         android:layout_height="1dp"
+        android:layout_marginTop="100dp"
         android:background="@color/baseColor"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="1.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.125" />
+        app:layout_constraintVertical_bias="0.0" />
 
     <TextView
-        android:id="@+id/textViewTittle"
+        android:id="@+id/textViewTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="ORDENES DE TRABAJO"
         android:textColor="@color/baseColor"
+        android:layout_marginTop="17dp"
         android:textSize="36sp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.498"
+        app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="@+id/viewLineTop"
-        app:layout_constraintVertical_bias="0.025" />
+        app:layout_constraintVertical_bias="0.0" />
 
     <View
         android:id="@+id/viewLineDown"
         android:layout_width="match_parent"
         android:layout_height="1dp"
+        android:layout_marginTop="17dp"
         android:background="@color/baseColor"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textViewTittle"
-        app:layout_constraintVertical_bias="0.025" />
+        app:layout_constraintTop_toBottomOf="@+id/textViewTitle"
+        app:layout_constraintVertical_bias="0.0" />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>
