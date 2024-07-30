@@ -6,8 +6,13 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.view.View;
+import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -34,8 +39,12 @@ import java.util.Date;
 public class VisitActivity extends AppCompatActivity {
 
     private String idVisit;
+    private SharedPreferences sharedPreferences;
     private TextView textViewFolio, textViewDate, textViewHour, textViewAddress, textViewCustomer;
     private TextView textViewTechnical, textViewApplicant, textViewPosition, textViewStatus, textViewEntryTime;
+    private Button buttonSave;
+    private Spinner spinnerStatus;
+    private ArrayAdapter<String> adapter;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -44,6 +53,7 @@ public class VisitActivity extends AppCompatActivity {
         textViewTitle.setText("VISITAS");
         Intent intent = getIntent();
         idVisit = intent.getStringExtra("idVisit");
+        sharedPreferences = getSharedPreferences("sessionUser", Context.MODE_PRIVATE);
         footer();
         init();
     }
@@ -59,7 +69,27 @@ public class VisitActivity extends AppCompatActivity {
         textViewPosition = findViewById(R.id.textViewPosition);
         textViewStatus = findViewById(R.id.textViewStatus);
         textViewEntryTime = findViewById(R.id.textViewEntryTime);
+        buttonSave = findViewById(R.id.buttonSave);
+        if (sharedPreferences.getString("rol", null).equals("Técnico")) {
+            spinnerStatus.setVisibility(View.GONE);
+            buttonSave.setVisibility(View.GONE);
+        }
+        spinnerStatus = findViewById(R.id.spinnerStatus);
+        String[] items = {"Autorizar", "Finalizar", "Cancelar"};
 
+        adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, items);
+
+
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+
+
+        spinnerStatus.setAdapter(adapter);
+        requestApi();
+        buttonSave();
+
+    }
+
+    public void requestApi() {
         JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET, URL + "visitas/" + idVisit, null, response -> {
             try {
                 // Obtener el objeto JSON de la respuesta
@@ -107,11 +137,60 @@ public class VisitActivity extends AppCompatActivity {
 
         RequestQueue requestQueue = Volley.newRequestQueue(VisitActivity.this);
         requestQueue.add(jsonObjectRequest);
+    }
 
+    public void buttonSave() {
+        buttonSave.setOnClickListener(v -> {
+            String status = spinnerStatus.getSelectedItem().toString();
+            String apiEstatus = "";
+            JSONObject jsonObject = new JSONObject();
+            if(status.equals("Autorizar"))
+            {
+                apiEstatus = "autorizar/";
+            }
+            else if(status.equals("Finalizar"))
+            {
+                apiEstatus = "finalizar/";
+            }
+            else if(status.equals("Cancelar"))
+            {
+                apiEstatus = "cancelar/";
+            }
+            JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.PATCH, URL + "visitas/" + apiEstatus + idVisit, jsonObject, response -> {
+                try {
+                    String message = response.getString("msg");
+                    Toast.makeText(VisitActivity.this, message, Toast.LENGTH_SHORT).show();
+                    // Create a Handler to introduce a delay
+                    Handler handler = new Handler(Looper.getMainLooper());
+
+                    // Post a Runnable with a delay of 2 seconds (2000 milliseconds)
+                    handler.postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            requestApi();
+                        }
+                    }, 2000);
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }, error -> {
+                try {
+                    String responseBody = new String(error.networkResponse.data, "utf-8");
+                    JSONObject data = new JSONObject(responseBody);
+                    String message = data.getString("msg");
+                    Toast.makeText(VisitActivity.this, message, Toast.LENGTH_SHORT).show();
+                } catch (UnsupportedEncodingException | JSONException e) {
+                    e.printStackTrace();
+                }
+            });
+
+            RequestQueue requestQueue = Volley.newRequestQueue(VisitActivity.this);
+            requestQueue.add(jsonObjectRequest);
+        });
     }
 
     public void footer() {
-        SharedPreferences sharedPreferences = getSharedPreferences("sessionUser", Context.MODE_PRIVATE);
+        sharedPreferences = getSharedPreferences("sessionUser", Context.MODE_PRIVATE);
         String token = sharedPreferences.getString("token", null);
 
         ConstraintLayout btnVisits = findViewById(R.id.imageButtonVisits);
