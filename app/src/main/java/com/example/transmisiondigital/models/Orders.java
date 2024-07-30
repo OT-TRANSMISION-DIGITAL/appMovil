@@ -3,13 +3,13 @@ package com.example.transmisiondigital.models;
 import java.util.Date;
 
 public class Orders {
-    public Date date;
+    public String date;
     public String status;
     public String folio;
     public String hour;
     public String idOrder;
 
-    public Orders(Date date, String status, String folio, String hour, String idOrder) {
+    public Orders(String date, String status, String folio, String hour, String idOrder) {
         this.date = date;
         this.status = status;
         this.folio = folio;
@@ -17,11 +17,11 @@ public class Orders {
         this.idOrder = idOrder;
     }
 
-    public Date getDate() {
+    public String getDate() {
         return date;
     }
 
-    public void setDate(Date date) {
+    public void setDate(String date) {
         this.date = date;
     }
 

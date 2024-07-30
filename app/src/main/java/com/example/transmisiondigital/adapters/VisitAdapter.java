@@ -38,14 +38,13 @@ public class VisitAdapter extends RecyclerView.Adapter<VisitAdapter.VisitViewHol
     @Override
     public void onBindViewHolder(VisitAdapter.VisitViewHolder holder, int position) {
         Visits visit = visitList.get(position);
-        holder.tvFolio.setText(visit.getFolio());
-        holder.tvHour.setText(visit.getHour());
-        holder.tvStatus.setText(visit.getStatus());
-        holder.tvDate.setText(visit.getDate().toString());
+        holder.tvFolio.setText("Folio: " + visit.getFolio());
+        holder.tvHour.setText("Hora: " + visit.getHour());
+        holder.tvStatus.setText("Estatus: " + visit.getStatus());
+        holder.tvDate.setText("Fecha: " + visit.getDate().toString());
 
         holder.btnDetails.setOnClickListener(v -> {
             Intent intent = new Intent(v.getContext(), VisitActivity.class);
-            // Aquí cambiamos tvFolio.getText().toString() por order.getIdOrder()
             intent.putExtra("idVisit", visit.getIdOrder());
             v.getContext().startActivity(intent);
         });
@@ -65,7 +64,7 @@ public class VisitAdapter extends RecyclerView.Adapter<VisitAdapter.VisitViewHol
             tvFolio = itemView.findViewById(R.id.textViewFolio);
             tvHour = itemView.findViewById(R.id.textViewHour);
             tvStatus = itemView.findViewById(R.id.textViewStatus);
-            tvDate = itemView.findViewById(R.id.textViewHour);
+            tvDate = itemView.findViewById(R.id.textViewDate);
             btnDetails = itemView.findViewById(R.id.btnDetails);
         }
 
@@ -73,7 +72,7 @@ public class VisitAdapter extends RecyclerView.Adapter<VisitAdapter.VisitViewHol
             tvFolio.setText(visit.getFolio());
             tvHour.setText(visit.getHour());
             tvStatus.setText(visit.getStatus());
-            tvDate.setText(visit.getDate().toString());
+            tvDate.setText(visit.getDate());
         }
     }
 }

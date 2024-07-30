@@ -72,7 +72,7 @@ public class VisitsActivity extends AppCompatActivity {
                     String fechaHoraSolicitudStr = order.getString("fechaHoraSolicitud");
                     SimpleDateFormat formatoOriginal = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                     // Formatos para fecha y hora
-                    SimpleDateFormat formatoFecha = new SimpleDateFormat("yyyy-MM-dd");
+                    SimpleDateFormat formatoFecha = new SimpleDateFormat("dd/MM/yyyy");
                     SimpleDateFormat formatoHora = new SimpleDateFormat("HH:mm:ss");
                     Date fechaHoraSolicitud = formatoOriginal.parse(fechaHoraSolicitudStr);
 
@@ -81,7 +81,7 @@ public class VisitsActivity extends AppCompatActivity {
                     String soloHora = formatoHora.format(fechaHoraSolicitud);
                     String status = order.getString("estatus");
                     String idVisit = order.getString("id");
-                    visitsList.add(new Visits(date(soloFecha), status, idVisit, soloHora, idVisit));
+                    visitsList.add(new Visits(soloFecha, status, idVisit, soloHora, idVisit));
                 }
                 // Configurar y establecer el adaptador del RecyclerView aquí
                 RecyclerView recyclerView = findViewById(R.id.recyclerViewVisits);

@@ -38,14 +38,13 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.OrderViewHol
     @Override
     public void onBindViewHolder(@NonNull OrderViewHolder holder, int position) {
         Orders order = ordersList.get(position);
-        holder.tvFolio.setText(order.getFolio());
-        holder.tvHour.setText(order.getHour());
-        holder.tvStatus.setText(order.getStatus());
-        holder.tvDate.setText(order.getDate().toString());
+        holder.tvFolio.setText("Folio: "+ order.getFolio());
+        holder.tvHour.setText("Hora: " +order.getHour());
+        holder.tvStatus.setText("Estatus: "+ order.getStatus());
+        holder.tvDate.setText("Fecha: "+order.getDate().toString());
 
         holder.btnDetails.setOnClickListener(v -> {
             Intent intent = new Intent(v.getContext(), OrderActivity.class);
-            // Aquí cambiamos tvFolio.getText().toString() por order.getIdOrder()
             intent.putExtra("idOrder", order.getIdOrder());
             v.getContext().startActivity(intent);
         });
@@ -65,7 +64,7 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.OrderViewHol
         tvFolio = itemView.findViewById(R.id.textViewFolio);
         tvHour = itemView.findViewById(R.id.textViewHour);
         tvStatus = itemView.findViewById(R.id.textViewStatus);
-        tvDate = itemView.findViewById(R.id.textViewHour);
+        tvDate = itemView.findViewById(R.id.textViewDate);
         btnDetails = itemView.findViewById(R.id.btnDetails);
     }
 
