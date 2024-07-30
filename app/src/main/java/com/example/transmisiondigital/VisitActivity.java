@@ -70,10 +70,10 @@ public class VisitActivity extends AppCompatActivity {
         textViewStatus = findViewById(R.id.textViewStatus);
         textViewEntryTime = findViewById(R.id.textViewEntryTime);
         buttonSave = findViewById(R.id.buttonSave);
-        /*if (sharedPreferences.getString("rol", null).equals("Técnico")) {
+        if (sharedPreferences.getString("rol", null).equals("Técnico")) {
             spinnerStatus.setVisibility(View.GONE);
             buttonSave.setVisibility(View.GONE);
-        }*/
+        }
         spinnerStatus = findViewById(R.id.spinnerStatus);
         String[] items = {"Autorizar", "Finalizar", "Cancelar"};
 

@@ -72,10 +72,10 @@ public class OrderActivity extends AppCompatActivity {
         buttonSave = findViewById(R.id.buttonSave);
         textViewTotal = findViewById(R.id.textViewTotal);
 
-        /*if (sharedPreferences.getString("rol", null).equals("Técnico")) {
+        if (sharedPreferences.getString("rol", null).equals("Técnico")) {
             spinnerStatus.setVisibility(View.GONE);
             buttonSave.setVisibility(View.GONE);
-        }*/
+        }
         spinnerStatus = findViewById(R.id.spinnerStatus);
         String[] items = {"Autorizar", "Finalizar", "Cancelar"};
 
