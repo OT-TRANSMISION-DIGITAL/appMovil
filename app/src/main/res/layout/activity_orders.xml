@@ -15,14 +15,34 @@
     android:layout_height="wrap_content"
     app:layout_constraintTop_toTopOf="parent" />
 
-<androidx.recyclerview.widget.RecyclerView
-    android:id="@+id/recyclerViewOrders"
-    android:layout_width="0dp"
-    android:layout_height="0dp"
-    app:layout_constraintTop_toBottomOf="@+id/include"
-    app:layout_constraintBottom_toTopOf="@+id/include2"
-    app:layout_constraintStart_toStartOf="parent"
-    app:layout_constraintEnd_toEndOf="parent" />
+
+    <Button
+        android:id="@+id/buttonDatePicker"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:text=" Fecha : 29-07-2024 "
+        android:textColor="@color/baseColor"
+        android:background="@drawable/button_without_border"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/include" />
+
+    <View
+        android:id="@+id/bottomLine"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/baseColor"
+        app:layout_constraintTop_toBottomOf="@+id/buttonDatePicker" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerViewOrders"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toTopOf="@+id/include2"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/bottomLine" />
 
 <include
     android:id="@+id/include2"

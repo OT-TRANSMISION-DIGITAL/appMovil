@@ -171,7 +171,6 @@ public class VisitsActivity extends AppCompatActivity {
         });
 
         btnOrder.setOnClickListener(v -> {
-            Log.d("footerActivity", "onClick: OrdersActivity");
             Intent intent = new Intent(this, OrdersActivity.class);
             //intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
             startActivity(intent);
@@ -179,7 +178,10 @@ public class VisitsActivity extends AppCompatActivity {
         });
 
         btnCalendar.setOnClickListener(v -> {
-
+            Intent intent = new Intent(this, CalendarActivity.class);
+            //intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+            startActivity(intent);
+            finish();
         });
 
         BtnAccount.setOnClickListener(v -> {

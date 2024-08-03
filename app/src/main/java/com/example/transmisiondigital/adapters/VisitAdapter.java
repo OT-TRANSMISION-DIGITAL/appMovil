@@ -45,7 +45,7 @@ public class VisitAdapter extends RecyclerView.Adapter<VisitAdapter.VisitViewHol
 
         holder.btnDetails.setOnClickListener(v -> {
             Intent intent = new Intent(v.getContext(), VisitActivity.class);
-            intent.putExtra("idVisit", visit.getIdOrder());
+            intent.putExtra("idVisit", visit.getIdVisit());
             v.getContext().startActivity(intent);
         });
     }

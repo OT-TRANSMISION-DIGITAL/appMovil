@@ -49,11 +49,11 @@ public class Visits {
         this.hour = hour;
     }
 
-    public String getIdOrder() {
+    public String getIdVisit() {
         return idVisit;
     }
 
-    public void setIdOrder(String idOrder) {
+    public void setIdVisit(String idVisit) {
         this.idVisit = idVisit;
     }
 }
