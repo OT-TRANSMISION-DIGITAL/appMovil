@@ -69,7 +69,7 @@ public class CalendarActivity extends AppCompatActivity {
         footer();
         spinnerSetUp();
         pickerDate();
-        init("06-01-2024", selectedItem);
+        init(dateFilter, selectedItem);
     }
 
     public void pickerDate() {
@@ -122,7 +122,7 @@ public class CalendarActivity extends AppCompatActivity {
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 String selectedText = parent.getItemAtPosition(position).toString();
                 selectedItem = selectedText.replace("Tipo: ", "").toLowerCase();
-                init("06-01-2024", selectedItem);
+                init(dateFilter, selectedItem);
             }
 
             @Override
