@@ -57,14 +57,16 @@ public class OrdersActivity extends AppCompatActivity {
         Date currentDate = Calendar.getInstance().getTime();
         SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy");
         footer();
-        init(dateFormat);
+        init();
         pickerDate();
     }
 
-    public void init(SimpleDateFormat dateFilter) {
+    public void init() {
        ordersList = new ArrayList<>();
 
-        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET, URL + "ordenes", null, response -> {
+        String urlWithParams = URL + "ordenes?estatus=Autorizada";
+
+        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET, urlWithParams, null, response -> {
             try {
                 JSONArray dataArray = response.getJSONArray("data");
                 for (int i = 0; i < dataArray.length(); i++) {
@@ -191,7 +193,6 @@ public class OrdersActivity extends AppCompatActivity {
         });
 
         btnOrder.setOnClickListener(v -> {
-            Log.d("footerActivity", "onClick: OrdersActivity");
             Intent intent = new Intent(this, OrdersActivity.class);
             //intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
             startActivity(intent);

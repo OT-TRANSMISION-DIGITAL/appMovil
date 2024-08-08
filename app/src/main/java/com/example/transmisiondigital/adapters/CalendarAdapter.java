@@ -2,6 +2,7 @@ package com.example.transmisiondigital.adapters;
 
 import android.content.Context;
 import android.content.Intent;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -43,9 +44,8 @@ public class CalendarAdapter extends RecyclerView.Adapter<CalendarAdapter.Calend
         holder.tvStatus.setText("Estatus: "+ calendar.getStatus());
         holder.tvDate.setText("Fecha: " + calendar.getDate().toString());
         holder.btnDetails.setOnClickListener(v -> {
-            CalendarActivity calendarActivity = new CalendarActivity();
-            String selectedItem = calendarActivity.selectedItem;
             Intent intent;
+            String selectedItem = calendar.getSelectedItem();
             if(selectedItem.equals("ordenes")){
                 intent = new Intent(v.getContext(), OrderActivity.class);
                 intent.putExtra("idOrder", calendar.getId());

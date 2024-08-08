@@ -53,27 +53,31 @@ public class CalendarActivity extends AppCompatActivity {
     private ArrayList<Calendar> calendarsList;
     private Spinner spinnerType;
     private ArrayAdapter<String> adapter;
-    public String selectedItem = "ordenes";
+    public String selectedItem;
     private Button buttonDatePicker;
     private String dateFilter;
     private SharedPreferences sharedPreferences;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_calendar);
         sharedPreferences = getSharedPreferences("sessionUser", Context.MODE_PRIVATE);
         Date date = new Date();
-        SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy");
+        SimpleDateFormat dateFormat = new SimpleDateFormat("MM-dd-yyyy", Locale.getDefault());
+        dateFilter = dateFormat.format(date);
         TextView textViewTitle = findViewById(R.id.textViewTitle);
-        textViewTitle.setText("CALENDARIO");
+        textViewTitle.setText("AGENDA");
         footer();
         spinnerSetUp();
         pickerDate();
+        selectedItem = "ordenes";
         init(dateFilter, selectedItem);
     }
 
     public void pickerDate() {
         buttonDatePicker = findViewById(R.id.buttonDatePicker);
+        buttonDatePicker.setText(" FECHA: " + dateFilter + " ");
         buttonDatePicker.setOnClickListener(v -> {
             final java.util.Calendar calendar = java.util.Calendar.getInstance();
             int year = calendar.get(java.util.Calendar.YEAR);
@@ -91,12 +95,14 @@ public class CalendarActivity extends AppCompatActivity {
                         String formattedDate = dateFormat.format(selectedDate.getTime());
 
                         // Mostrar la fecha formateada en el botón
-                        buttonDatePicker.setText(" Fecha: " + formattedDate + " ");
+                        buttonDatePicker.setText(" FECHA: " + formattedDate + " ");
+                        Log.d("buttonDatePicker", "formattedDate: " + formattedDate);
 
                         // Actualizar dateFilter con el formato correcto
                         SimpleDateFormat dateFormatForInit = new SimpleDateFormat("MM-dd-yyyy", Locale.getDefault());
                         dateFilter = dateFormatForInit.format(selectedDate.getTime());
                         //dateFilter = formattedDate;
+                        Log.i("buttonDatePicker", "dateFilter: " + dateFilter);
                         init(dateFilter, selectedItem);
                     }, year, month, day);
             datePickerDialog.show();
@@ -104,9 +110,9 @@ public class CalendarActivity extends AppCompatActivity {
     }
 
 
-    public void spinnerSetUp(){
+    public void spinnerSetUp() {
         spinnerType = findViewById(R.id.spinnerType);
-        String[] items = {"Tipo: ordenes", "Tipo: visitas" };
+        String[] items = {"Tipo: ordenes", "Tipo: visitas"};
 
         // Create an ArrayAdapter using the string array and a default spinner layout
         adapter = new ArrayAdapter<>(this, R.layout.spinner_item, items);
@@ -135,9 +141,9 @@ public class CalendarActivity extends AppCompatActivity {
     public void init(String dateFilter, String type) {
         calendarsList = new ArrayList<>();
         String queryParams = null;
-        try {
 
-            queryParams = String.format(Locale.US,"?fecha=%s&estatus=%s&tipo=%s&tecnico=%s",
+        try {
+            queryParams = String.format(Locale.US, "?fecha=%s&estatus=%s&tipo=%s&tecnico=%s",
                     URLEncoder.encode(dateFilter, "UTF-8"),
                     URLEncoder.encode("Autorizada", "UTF-8"),
                     URLEncoder.encode(type, "UTF-8"),
@@ -146,64 +152,65 @@ public class CalendarActivity extends AppCompatActivity {
             throw new RuntimeException(e);
         }
 
-        String finalURL = URL +"agenda" + queryParams;
+        String finalURL = URL + "agenda" + queryParams;
         JsonArrayRequest jsonObjectRequest = new JsonArrayRequest(Request.Method.GET, finalURL, null, response -> {
-                try {
-                    JSONArray dataArray = new JSONArray(response.toString());
-                    for (int i = 0; i < dataArray.length(); i++) {
-                        JSONObject calendar = dataArray.getJSONObject(i);
-                        String fechaHoraSolicitudStr = calendar.getString("fechaHoraSolicitud");
-                        SimpleDateFormat formatoOriginal = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-                        SimpleDateFormat formatoFecha = new SimpleDateFormat("dd/MM/yyyy");
-                        SimpleDateFormat formatoHora = new SimpleDateFormat("HH:mm:ss");
-                        Date fechaHoraSolicitud = formatoOriginal.parse(fechaHoraSolicitudStr);
+            try {
+                JSONArray dataArray = new JSONArray(response.toString());
+                for (int i = 0; i < dataArray.length(); i++) {
+                    JSONObject calendar = dataArray.getJSONObject(i);
+                    String fechaHoraSolicitudStr = calendar.getString("fechaHoraSolicitud");
+                    SimpleDateFormat formatoOriginal = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                    SimpleDateFormat formatoFecha = new SimpleDateFormat("dd/MM/yyyy");
+                    SimpleDateFormat formatoHora = new SimpleDateFormat("HH:mm:ss");
+                    Date fechaHoraSolicitud = formatoOriginal.parse(fechaHoraSolicitudStr);
 
-                        // Formatear a strings de fecha y hora
-                        String soloFecha = formatoFecha.format(fechaHoraSolicitud);
-                        String soloHora = formatoHora.format(fechaHoraSolicitud);
-                        String status = calendar.getString("estatus");
-                        String id = calendar.getString("id");
-                        calendarsList.add(new Calendar(soloFecha, status, id, soloHora, id));
-                    }
-                    // Configurar y establecer el adaptador del RecyclerView aquí
-                    RecyclerView recyclerView = findViewById(R.id.recyclerViewCalendar);
-                    recyclerView.setLayoutManager(new LinearLayoutManager(CalendarActivity.this));
-                    CalendarAdapter calendarAdapter = new CalendarAdapter(calendarsList, CalendarActivity.this);
-                    recyclerView.setHasFixedSize(true);
-                    recyclerView.setAdapter(calendarAdapter);
-                } catch (Exception e) {
-                    e.printStackTrace();
+                    // Formatear a strings de fecha y hora
+                    String soloFecha = formatoFecha.format(fechaHoraSolicitud);
+                    String soloHora = formatoHora.format(fechaHoraSolicitud);
+                    String status = calendar.getString("estatus");
+                    String id = calendar.getString("id");
+
+                    calendarsList.add(new Calendar(soloFecha, status, id, soloHora, id, selectedItem));
                 }
-            }, new Response.ErrorListener() {
-                @Override
-                public void onErrorResponse(VolleyError error) {
-                    // Obtener el mensaje de error de VolleyError
-                    String mensajeError = "";
+                // Configurar y establecer el adaptador del RecyclerView aquí
+                RecyclerView recyclerView = findViewById(R.id.recyclerViewCalendar);
+                recyclerView.setLayoutManager(new LinearLayoutManager(CalendarActivity.this));
+                CalendarAdapter calendarAdapter = new CalendarAdapter(calendarsList, CalendarActivity.this);
+                recyclerView.setHasFixedSize(true);
+                recyclerView.setAdapter(calendarAdapter);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                // Obtener el mensaje de error de VolleyError
+                String mensajeError = "";
 
-                    // Verificar si hay una respuesta de error
-                    if (error.networkResponse != null && error.networkResponse.data != null) {
-                        try {
-                            String responseData = new String(error.networkResponse.data, "UTF-8");
-                            JSONObject jsonObject = new JSONObject(responseData);
-                            mensajeError = jsonObject.optString("msg", "Error en la petición");
-                        } catch (UnsupportedEncodingException | JSONException e) {
-                            e.printStackTrace();
-                        }
-                    } else {
-                        mensajeError = "Error de red";
+                // Verificar si hay una respuesta de error
+                if (error.networkResponse != null && error.networkResponse.data != null) {
+                    try {
+                        String responseData = new String(error.networkResponse.data, "UTF-8");
+                        JSONObject jsonObject = new JSONObject(responseData);
+                        mensajeError = jsonObject.optString("msg", "Error en la petición");
+                    } catch (UnsupportedEncodingException | JSONException e) {
+                        e.printStackTrace();
                     }
-
-                    //progressDialog.dismiss();
-                    // Mostrar el mensaje de error en un cuadro de diálogo o Toast
-                    Toast.makeText(CalendarActivity.this, mensajeError, Toast.LENGTH_SHORT).show();
+                } else {
+                    mensajeError = "Error de red";
                 }
-            });
 
-            // Añadir la petición a la cola de solicitudes
-            RequestQueue queue = Volley.newRequestQueue(CalendarActivity.this);
-            queue.add(jsonObjectRequest);
+                //progressDialog.dismiss();
+                // Mostrar el mensaje de error en un cuadro de diálogo o Toast
+                Toast.makeText(CalendarActivity.this, mensajeError, Toast.LENGTH_SHORT).show();
+            }
+        });
 
-        }
+        // Añadir la petición a la cola de solicitudes
+        RequestQueue queue = Volley.newRequestQueue(CalendarActivity.this);
+        queue.add(jsonObjectRequest);
+
+    }
 
     public void footer() {
         SharedPreferences sharedPreferences = getSharedPreferences("sessionUser", Context.MODE_PRIVATE);

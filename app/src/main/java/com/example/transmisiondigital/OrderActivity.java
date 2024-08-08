@@ -127,21 +127,32 @@ public class OrderActivity extends AppCompatActivity {
                 sucursalName = data.getJSONObject("sucursal").getString("nombre");
 
                 String fechaHoraSolicitudStr = data.getString("fechaHoraSolicitud");
-                String fechaHoraLLegadaStr = data.getString("fechaHoraLlegada");
-                String fechaHoraSalidaStr = data.getString("fechaHoraSalida");
+                String fechaHoraLLegadaStr = data.optString("fechaHoraLlegada", "");
+                String fechaHoraSalidaStr = data.optString("fechaHoraSalida", "");
 
                 SimpleDateFormat formatoOriginal = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                 SimpleDateFormat formatoFecha = new SimpleDateFormat("yyyy-MM-dd");
                 SimpleDateFormat formatoHora = new SimpleDateFormat("HH:mm:ss");
                 Date fechaHoraSolicitud = formatoOriginal.parse(fechaHoraSolicitudStr);
-                Date fechaHoraLLegada = formatoOriginal.parse(fechaHoraLLegadaStr);
-                Date fechaHoraSalida = formatoOriginal.parse(fechaHoraSalidaStr);
+
+                Date fechaHoraLLegada = null;
+                Date fechaHoraSalida = null;
+                try {
+                    fechaHoraLLegada = formatoOriginal.parse(fechaHoraLLegadaStr);
+                } catch (ParseException e) {
+                    // Handle the exception or log it if necessary
+                }
+                try {
+                    fechaHoraSalida = formatoOriginal.parse(fechaHoraSalidaStr);
+                } catch (ParseException e) {
+                    Log.e("OrderActivity", "error: " + e.getMessage());
+                }
 
                 // Formatear a strings de fecha y hora
                 String soloFecha = formatoFecha.format(fechaHoraSolicitud);
                 String soloHora = formatoHora.format(fechaHoraSolicitud);
-                String horaLLegada = formatoHora.format(fechaHoraLLegada);
-                String horaSalida = formatoHora.format(fechaHoraSalida);
+                String horaLLegada = (fechaHoraLLegada != null) ? formatoHora.format(fechaHoraLLegada) : "";
+                String horaSalida = (fechaHoraSalida != null) ? formatoHora.format(fechaHoraSalida) : "";
                 String estatus = data.getString("estatus");
 
                 textViewFolio.setText("Folio: " + data.getString("id"));
