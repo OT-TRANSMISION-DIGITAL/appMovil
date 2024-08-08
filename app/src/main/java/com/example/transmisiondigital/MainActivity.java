@@ -1,13 +1,19 @@
 package com.example.transmisiondigital;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
 
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -23,7 +29,8 @@ import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
 import com.example.transmisiondigital.globalVariables.Conexion;
-import com.example.transmisiondigital.tecnico.TecnicoMainActivity;
+
+import com.example.transmisiondigital.services.PusherService;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -39,16 +46,28 @@ public class MainActivity extends AppCompatActivity {
     private ProgressDialog progressDialog;
     private String URL = Conexion.URL;
     private String rol;
+    private SharedPreferences sharedPreferences;
+    private static final int REQUEST_CODE_POST_NOTIFICATIONS = 5;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        if(getSharedPreferences("sessionUser", Context.MODE_PRIVATE).contains("token")){
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+        sharedPreferences = getSharedPreferences("sessionUser", Context.MODE_PRIVATE);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ActivityCompat.checkSelfPermission(this, "android.permission.POST_NOTIFICATIONS") != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this, new String[]{"android.permission.POST_NOTIFICATIONS"}, REQUEST_CODE_POST_NOTIFICATIONS);
+            } else {
+                startService(new Intent(this, PusherService.class));
+            }
+        } else {
+            startService(new Intent(this, PusherService.class));
+        }
+        if (sharedPreferences.contains("token")) {
             Intent intent = new Intent(MainActivity.this, OrdersActivity.class);
             startActivity(intent);
             finish();
         }
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
 
         btnLogin = findViewById(R.id.btnLogin);
         editTextEmail = findViewById(R.id.editTextEmail);
@@ -109,10 +128,10 @@ public class MainActivity extends AppCompatActivity {
                                 Integer idUser = usuario.getInt("id");
                                 String userName = usuario.getString("nombre");
                                 Integer idRol = usuario.getInt("rol_id");
-                                if(idRol == 1){
+                                if (idRol == 1) {
                                     rol = "Administrador";
                                 }
-                                if(idRol == 3){
+                                if (idRol == 3) {
                                     rol = "Técnico";
                                 }
 
@@ -190,4 +209,20 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == REQUEST_CODE_POST_NOTIFICATIONS) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                // Permission granted, start the service
+                startService(new Intent(this, PusherService.class));
+            } else {
+                // Permission denied
+                Log.e("Notification", "Permission for posting notifications denied.");
+            }
+        }
+    }
+
+
 }

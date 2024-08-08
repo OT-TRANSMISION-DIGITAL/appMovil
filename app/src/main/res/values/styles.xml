@@ -6,4 +6,11 @@
         <item name="android:layout_height">wrap_content</item>
         <item name="android:inputType">text</item>
     </style>
+
+    <style name="CustomSpinnerStyle">
+        <!-- Aplica el drawable con el borde personalizado -->
+        <item name="android:background">@drawable/spinner_border</item>
+        <!-- Define el color del texto -->
+        <item name="android:textColor">@color/baseColor</item>
+    </style>
 </resources>

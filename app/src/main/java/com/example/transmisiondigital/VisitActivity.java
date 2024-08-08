@@ -42,9 +42,10 @@ public class VisitActivity extends AppCompatActivity {
     private SharedPreferences sharedPreferences;
     private TextView textViewFolio, textViewDate, textViewHour, textViewAddress, textViewCustomer;
     private TextView textViewTechnical, textViewApplicant, textViewPosition, textViewStatus, textViewEntryTime;
-    private Button buttonSave;
+    private Button buttonSave, buttonAttend;
     private Spinner spinnerStatus;
     private ArrayAdapter<String> adapter;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -58,7 +59,7 @@ public class VisitActivity extends AppCompatActivity {
         init();
     }
 
-    public void init(){
+    public void init() {
         textViewFolio = findViewById(R.id.textViewFolio);
         textViewDate = findViewById(R.id.textViewDate);
         textViewHour = findViewById(R.id.textViewHour);
@@ -70,11 +71,14 @@ public class VisitActivity extends AppCompatActivity {
         textViewStatus = findViewById(R.id.textViewStatus);
         textViewEntryTime = findViewById(R.id.textViewEntryTime);
         buttonSave = findViewById(R.id.buttonSave);
+        spinnerStatus = findViewById(R.id.spinnerStatus);
+        buttonAttend = findViewById(R.id.buttonAttend);
+        buttonAttend.setVisibility(View.GONE);
         if (sharedPreferences.getString("rol", null).equals("Técnico")) {
             spinnerStatus.setVisibility(View.GONE);
             buttonSave.setVisibility(View.GONE);
+            buttonAttend.setVisibility(View.VISIBLE);
         }
-        spinnerStatus = findViewById(R.id.spinnerStatus);
         String[] items = {"Autorizar", "Finalizar", "Cancelar"};
 
         adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, items);
@@ -86,6 +90,7 @@ public class VisitActivity extends AppCompatActivity {
         spinnerStatus.setAdapter(adapter);
         requestApi();
         buttonSave();
+        setButtonAttend();
 
     }
 
@@ -98,22 +103,33 @@ public class VisitActivity extends AppCompatActivity {
                 String clienteNombre = data.getJSONObject("cliente").getString("nombre");
                 String tecnicoNombre = data.getJSONObject("tecnico").getString("nombre");
 
-                String fechaHoraSolicitudStr = data.getString("fechaHoraSolicitud");
-                String fechaHoraLlegadaStr = data.getString("fechaHoraLlegada");
+                String fechaHoraSolicitudStr = data.optString("fechaHoraSolicitud", "");
+                String fechaHoraLlegadaStr = data.optString("fechaHoraLlegada", "");
                 SimpleDateFormat formatoOriginal = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                 SimpleDateFormat formatoFecha = new SimpleDateFormat("yyyy-MM-dd");
                 SimpleDateFormat formatoHora = new SimpleDateFormat("HH:mm:ss");
 
-                Date fechaHoraSolicitud = formatoOriginal.parse(fechaHoraSolicitudStr);
-                Date fechaHoraLlegada = formatoOriginal.parse(fechaHoraLlegadaStr);
-                String fechaSolicitud = formatoFecha.format(fechaHoraSolicitud);
-                String horaSolicitud = formatoHora.format(fechaHoraSolicitud);
-                String horaLlegada = formatoHora.format(fechaHoraLlegada);
+                Date fechaHoraSolicitud = null;
+                Date fechaHoraLlegada = null;
+                try {
+                    fechaHoraSolicitud = formatoOriginal.parse(fechaHoraSolicitudStr);
+                } catch (ParseException e) {
+                    // Handle the exception or log it if necessary
+                }
+                try {
+                    fechaHoraLlegada = formatoOriginal.parse(fechaHoraLlegadaStr);
+                } catch (ParseException e) {
+                    // Handle the exception or log it if necessary
+                }
+
+                String fechaSolicitud = (fechaHoraSolicitud != null) ? formatoFecha.format(fechaHoraSolicitud) : "";
+                String horaSolicitud = (fechaHoraSolicitud != null) ? formatoHora.format(fechaHoraSolicitud) : "";
+                String horaLlegada = (fechaHoraLlegada != null) ? formatoHora.format(fechaHoraLlegada) : "";
 
 
                 textViewFolio.setText("Folio: " + data.getString("id"));
                 textViewDate.setText("Fecha: " + fechaSolicitud);
-                textViewHour.setText("Hora: "+ horaSolicitud);
+                textViewHour.setText("Hora: " + horaSolicitud);
                 textViewAddress.setText("Dirección: " + data.getString("direccion"));
                 textViewCustomer.setText("Cliente: " + clienteNombre);
                 textViewTechnical.setText("Tecnico: " + tecnicoNombre);
@@ -121,8 +137,6 @@ public class VisitActivity extends AppCompatActivity {
                 textViewEntryTime.setText("Hora de llegada: " + horaLlegada);
             } catch (JSONException e) {
                 e.printStackTrace();
-            } catch (ParseException e) {
-                throw new RuntimeException(e);
             }
         }, error -> {
             try {
@@ -144,16 +158,11 @@ public class VisitActivity extends AppCompatActivity {
             String status = spinnerStatus.getSelectedItem().toString();
             String apiEstatus = "";
             JSONObject jsonObject = new JSONObject();
-            if(status.equals("Autorizar"))
-            {
+            if (status.equals("Autorizar")) {
                 apiEstatus = "autorizar/";
-            }
-            else if(status.equals("Finalizar"))
-            {
+            } else if (status.equals("Finalizar")) {
                 apiEstatus = "finalizar/";
-            }
-            else if(status.equals("Cancelar"))
-            {
+            } else if (status.equals("Cancelar")) {
                 apiEstatus = "cancelar/";
             }
             JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.PATCH, URL + "visitas/" + apiEstatus + idVisit, jsonObject, response -> {
@@ -170,6 +179,34 @@ public class VisitActivity extends AppCompatActivity {
                             requestApi();
                         }
                     }, 2000);
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }, error -> {
+                try {
+                    String responseBody = new String(error.networkResponse.data, "utf-8");
+                    JSONObject data = new JSONObject(responseBody);
+                    String message = data.getString("msg");
+                    Toast.makeText(VisitActivity.this, message, Toast.LENGTH_SHORT).show();
+                } catch (UnsupportedEncodingException | JSONException e) {
+                    e.printStackTrace();
+                }
+            });
+
+            RequestQueue requestQueue = Volley.newRequestQueue(VisitActivity.this);
+            requestQueue.add(jsonObjectRequest);
+        });
+    }
+
+    public void setButtonAttend(){
+        buttonAttend.setOnClickListener(v -> {
+            JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.PATCH, URL + "visitas/finalizar/" + idVisit, null, response -> {
+                try {
+                    String message = response.getString("msg");
+                    Toast.makeText(VisitActivity.this, message, Toast.LENGTH_SHORT).show();
+                    Intent intent = new Intent(this, VisitsActivity.class);
+                    startActivity(intent);
+                    finish();
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }

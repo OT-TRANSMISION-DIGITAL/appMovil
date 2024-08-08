@@ -63,11 +63,12 @@ public class VisitsActivity extends AppCompatActivity {
         // Inicializa la lista de visitas
         List<Visits> visitsList = new ArrayList<>();
 
-        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET, URL + "visitas", null, response -> {
+        String urlWithParams = URL + "visitas?estatus=Autorizada";
+
+        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET, urlWithParams, null, response -> {
             try {
                 JSONArray dataArray = response.getJSONArray("data");
                 for (int i = 0; i < dataArray.length(); i++) {
-                    Log.e("VisitsActivity", "init: " + dataArray.length());
                     JSONObject order = dataArray.getJSONObject(i);
                     String fechaHoraSolicitudStr = order.getString("fechaHoraSolicitud");
                     SimpleDateFormat formatoOriginal = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -171,7 +172,6 @@ public class VisitsActivity extends AppCompatActivity {
         });
 
         btnOrder.setOnClickListener(v -> {
-            Log.d("footerActivity", "onClick: OrdersActivity");
             Intent intent = new Intent(this, OrdersActivity.class);
             //intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
             startActivity(intent);
@@ -179,7 +179,10 @@ public class VisitsActivity extends AppCompatActivity {
         });
 
         btnCalendar.setOnClickListener(v -> {
-
+            Intent intent = new Intent(this, CalendarActivity.class);
+            //intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+            startActivity(intent);
+            finish();
         });
 
         BtnAccount.setOnClickListener(v -> {

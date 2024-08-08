@@ -1,20 +1,20 @@
 package com.example.transmisiondigital.models;
 
-import java.util.Date;
-
-public class Visits {
+public class Calendar {
     public String date;
     public String status;
     public String folio;
     public String hour;
-    public String idVisit;
+    public String id;
+    public String selectedItem;
 
-    public Visits(String date, String status, String folio, String hour, String idVisit) {
+    public Calendar(String date, String status, String folio, String hour, String id, String selectedItem) {
         this.date = date;
         this.status = status;
         this.folio = folio;
         this.hour = hour;
-        this.idVisit = idVisit;
+        this.id = id;
+        this.selectedItem = selectedItem;
     }
 
     public String getDate() {
@@ -49,11 +49,19 @@ public class Visits {
         this.hour = hour;
     }
 
-    public String getIdVisit() {
-        return idVisit;
+    public String getId() {
+        return id;
     }
 
-    public void setIdVisit(String idVisit) {
-        this.idVisit = idVisit;
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public String getSelectedItem() {
+        return selectedItem;
+    }
+
+    public void setSelectedItem(String selectedItem) {
+        this.selectedItem = selectedItem;
     }
 }
