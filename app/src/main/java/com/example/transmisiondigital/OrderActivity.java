@@ -3,21 +3,28 @@ package com.example.transmisiondigital;
 import static com.example.transmisiondigital.globalVariables.Conexion.URL;
 
 import android.Manifest;
+import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Base64;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -34,6 +41,7 @@ import androidx.core.view.WindowInsetsCompat;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
+import com.android.volley.toolbox.ImageRequest;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
 import com.dantsu.escposprinter.EscPosPrinter;
@@ -43,11 +51,16 @@ import com.dantsu.escposprinter.exceptions.EscPosConnectionException;
 import com.dantsu.escposprinter.exceptions.EscPosEncodingException;
 import com.dantsu.escposprinter.exceptions.EscPosParserException;
 import com.dantsu.escposprinter.textparser.PrinterTextParserImg;
+import com.example.transmisiondigital.request.MultipartRequest;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -55,18 +68,20 @@ import java.util.Date;
 
 public class OrderActivity extends AppCompatActivity {
 
-    private String idOrder, sucursalName;
+    private String idOrder, sucursalName, firmaUrl;
     private SharedPreferences sharedPreferences;
     private TextView textViewFolio, textViewDate, textViewHour, textViewAddress, textViewCustomer;
     private LinearLayout container;
     private TextView textViewTechnical, textViewApplicant, textViewPosition, textViewStatus, textViewEntryTime, textViewDepartureTime, textViewTotal;
     private Spinner spinnerStatus;
-    private Button buttonSave, buttonPrint;
+    private Button buttonSave, buttonPrint, buttonSigned, buttonSaveTechnical;
+    private ImageView imageViewSignature;
     private ArrayAdapter<String> adapter;
     private static final int REQUEST_ENABLE_BT = 1;
     private static final int REQUEST_BLUETOOTH_PERMISSIONS = 2;
     private BluetoothAdapter bluetoothAdapter;
     private JSONArray detallesArray;
+    private ProgressBar progressBar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -91,11 +106,19 @@ public class OrderActivity extends AppCompatActivity {
         textViewTotal = findViewById(R.id.textViewTotal);
         buttonPrint = findViewById(R.id.buttonPrint);
         spinnerStatus = findViewById(R.id.spinnerStatus);
+        buttonSigned = findViewById(R.id.buttonSigned);
+        imageViewSignature = findViewById(R.id.imageViewSignature);
+        buttonSaveTechnical = findViewById(R.id.buttonSaveTechnical);
+        progressBar = findViewById(R.id.progressBar);
+        progressBar.setVisibility(View.GONE);
 
         if (sharedPreferences.getString("rol", null).equals("Técnico")) {
             spinnerStatus.setVisibility(View.GONE);
             buttonSave.setVisibility(View.GONE);
             buttonPrint.setVisibility(View.VISIBLE);
+            buttonSigned.setVisibility(View.VISIBLE);
+            imageViewSignature.setVisibility(View.VISIBLE);
+            buttonSaveTechnical.setVisibility(View.VISIBLE);
         }
         spinnerStatus = findViewById(R.id.spinnerStatus);
         String[] items = {"Autorizar", "Finalizar", "Cancelar"};
@@ -111,12 +134,14 @@ public class OrderActivity extends AppCompatActivity {
 
         init();
         buttonSave();
-        //requestBluetoothPermissions();
         buttonPrint();
+        buttonSigned();
+        buttonSaveTechnical();
         footer();
     }
 
     public void init() {
+        progressBar.setVisibility(View.VISIBLE);
         JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET, URL + "ordenes/" + idOrder, null, response -> {
             try {
                 // Obtener el objeto JSON de la respuesta
@@ -129,6 +154,8 @@ public class OrderActivity extends AppCompatActivity {
                 String fechaHoraSolicitudStr = data.getString("fechaHoraSolicitud");
                 String fechaHoraLLegadaStr = data.optString("fechaHoraLlegada", "");
                 String fechaHoraSalidaStr = data.optString("fechaHoraSalida", "");
+                firmaUrl = data.optString("firma", "");
+                Log.i("firmaUrl", "firmaUrl: " + firmaUrl);
 
                 SimpleDateFormat formatoOriginal = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                 SimpleDateFormat formatoFecha = new SimpleDateFormat("yyyy-MM-dd");
@@ -201,6 +228,8 @@ public class OrderActivity extends AppCompatActivity {
                     total += cantidad * precio;
                 }
                 textViewTotal.setText("Total: $" + total);
+                loadImage();
+                progressBar.setVisibility(View.GONE);
             } catch (JSONException e) {
                 e.printStackTrace();
             } catch (ParseException e) {
@@ -211,6 +240,7 @@ public class OrderActivity extends AppCompatActivity {
                 String responseBody = new String(error.networkResponse.data, "utf-8");
                 JSONObject data = new JSONObject(responseBody);
                 String message = data.getString("message");
+                progressBar.setVisibility(View.GONE);
                 Toast.makeText(OrderActivity.this, message, Toast.LENGTH_SHORT).show();
             } catch (UnsupportedEncodingException | JSONException e) {
                 e.printStackTrace();
@@ -266,6 +296,160 @@ public class OrderActivity extends AppCompatActivity {
             requestQueue.add(jsonObjectRequest);
         });
     }
+
+    public void buttonSigned() {
+        buttonSigned.setOnClickListener(v -> {
+            Intent intent = new Intent(this, SignatureActivity.class);
+            intent.putExtra("idOrder", idOrder);
+            Log.i("idOrder", "idOrder: " + idOrder);
+            startActivity(intent);
+        });
+    }
+
+    public void loadImage() {
+        Log.i("ImageView", "firma: " + firmaUrl);
+        if (firmaUrl != null && !firmaUrl.isEmpty()) {
+            // Make a network request to fetch the image
+            ImageRequest imageRequest = new ImageRequest(firmaUrl, response -> {
+                // Set the Bitmap to the ImageView
+                imageViewSignature.setImageBitmap(response);
+                imageViewSignature.setScaleType(ImageView.ScaleType.CENTER_CROP); // Adjust the image to fit the ImageView
+            }, 0, 0, ImageView.ScaleType.CENTER_CROP, Bitmap.Config.RGB_565, error -> {
+                Log.e("ImageView", "Error fetching image: " + error.getMessage());
+            });
+
+            RequestQueue requestQueue = Volley.newRequestQueue(OrderActivity.this);
+            requestQueue.add(imageRequest);
+            return;
+        }
+        // Path to the image file
+        File imageFile = new File(getExternalFilesDir(Environment.DIRECTORY_PICTURES), "signatureOrder_" + idOrder + ".png");
+
+        if (imageFile.exists()) {
+            Log.i("ImageView", "Image file exists: " + imageFile.getAbsolutePath());
+            imageViewSignature.setImageBitmap(BitmapFactory.decodeFile(imageFile.getAbsolutePath()));
+            imageViewSignature.setScaleType(ImageView.ScaleType.CENTER_CROP); // Adjust the image to fit the ImageView
+        } else {
+            Log.i("ImageView", "Image file does not exist: " + imageFile.getAbsolutePath());
+            imageViewSignature.setVisibility(View.GONE);
+        }
+    }
+
+    public void loadImageOnResume() {
+        // Path to the image file
+        File imageFile = new File(getExternalFilesDir(Environment.DIRECTORY_PICTURES), "signatureOrder_" + idOrder + ".png");
+
+        if (imageFile.exists()) {
+            Log.i("ImageView", "Image file exists: " + imageFile.getAbsolutePath());
+            imageViewSignature.setImageBitmap(BitmapFactory.decodeFile(imageFile.getAbsolutePath()));
+            imageViewSignature.setScaleType(ImageView.ScaleType.CENTER_CROP); // Adjust the image to fit the ImageView
+        } else {
+            //Log.i("ImageView", "Image file does not exist: " + imageFile.getAbsolutePath());
+            //imageViewSignature.setVisibility(View.GONE);
+            if (firmaUrl != null && !firmaUrl.isEmpty()) {
+                // Make a network request to fetch the image
+                ImageRequest imageRequest = new ImageRequest(firmaUrl, response -> {
+                    // Set the Bitmap to the ImageView
+                    imageViewSignature.setImageBitmap(response);
+                    imageViewSignature.setScaleType(ImageView.ScaleType.CENTER_CROP); // Adjust the image to fit the ImageView
+                }, 0, 0, ImageView.ScaleType.CENTER_CROP, Bitmap.Config.RGB_565, error -> {
+                    Log.e("ImageView", "Error fetching image: " + error.getMessage());
+                });
+
+                RequestQueue requestQueue = Volley.newRequestQueue(OrderActivity.this);
+                requestQueue.add(imageRequest);
+            }
+        }
+    }
+
+    public void buttonSaveTechnical() {
+    buttonSaveTechnical.setOnClickListener(new View.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            progressBar.setVisibility(View.VISIBLE);
+            // Path to the image file
+            File imageFile = new File(getExternalFilesDir(Environment.DIRECTORY_PICTURES), "signatureOrder_" + idOrder + ".png");
+
+            if (imageFile.exists()) {
+                // Send multipart/form-data request
+                MultipartRequest multipartRequest = new MultipartRequest(URL + "ordenes/guardarFirma/" + idOrder, error -> {
+                    try {
+                        String responseBody = new String(error.networkResponse.data, "utf-8");
+                        JSONObject data = new JSONObject(responseBody);
+                        JSONObject errors = data.getJSONObject("errors");
+                        JSONArray firmaErrors = errors.getJSONArray("firma");
+
+                        for (int i = 0; i < firmaErrors.length(); i++) {
+                            Log.i("ImagenPeticion", "Error: " + firmaErrors.getString(i));
+                        }
+                        progressBar.setVisibility(View.GONE);
+                    } catch (UnsupportedEncodingException | JSONException e) {
+                        e.printStackTrace();
+                    }
+                }, response -> {
+                    progressBar.setVisibility(View.GONE);
+                    try {
+                        String responseBody = new String(response.data, "utf-8");
+                        Log.i("ImagenPeticion", "Response: " + responseBody);
+
+                        // Delete the image file after successful upload
+                        if (imageFile.delete()) {
+                            Log.i("ImageView", "Image file deleted: " + imageFile.getAbsolutePath());
+                        } else {
+                            Log.e("ImageView", "Failed to delete image file: " + imageFile.getAbsolutePath());
+                        }
+                    } catch (UnsupportedEncodingException e) {
+                        e.printStackTrace();
+                    }
+                }, imageFile, "firma");
+
+                RequestQueue requestQueue = Volley.newRequestQueue(OrderActivity.this);
+                requestQueue.add(multipartRequest);
+            } else {
+                progressBar.setVisibility(View.GONE);
+                Log.i("ImageView", "Image file does not exist: " + imageFile.getAbsolutePath());
+            }
+
+            progressBar.setVisibility(View.VISIBLE);
+            JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.PATCH, URL + "ordenes/finalizar/" + idOrder, null, response -> {
+                try {
+                    String message = response.getString("msg");
+                    Toast.makeText(OrderActivity.this, message, Toast.LENGTH_SHORT).show();
+                    // Create a Handler to introduce a delay
+                    Handler handler = new Handler(Looper.getMainLooper());
+
+                    progressBar.setVisibility(View.GONE);
+                    // Post a Runnable with a delay of 2 seconds (2000 milliseconds)
+                    handler.postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            init();
+                        }
+                    }, 2000);
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }, error -> {
+                progressBar.setVisibility(View.GONE);
+                if (error.networkResponse != null) {
+                    try {
+                        String responseBody = new String(error.networkResponse.data, "utf-8");
+                        JSONObject data = new JSONObject(responseBody);
+                        String message = data.getString("message");
+                        Toast.makeText(OrderActivity.this, message, Toast.LENGTH_SHORT).show();
+                    } catch (UnsupportedEncodingException | JSONException e) {
+                        e.printStackTrace();
+                    }
+                } else {
+                    Toast.makeText(OrderActivity.this, "Network error", Toast.LENGTH_SHORT).show();
+                }
+            });
+
+            RequestQueue requestQueue = Volley.newRequestQueue(OrderActivity.this);
+            requestQueue.add(jsonObjectRequest);
+        }
+    });
+}
 
     public void buttonPrint() {
         buttonPrint.setOnClickListener(v -> {
@@ -346,7 +530,6 @@ public class OrderActivity extends AppCompatActivity {
         }
     }
 
-
     private void requestBluetoothPermissions() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             ActivityCompat.requestPermissions(this,
@@ -358,21 +541,6 @@ public class OrderActivity extends AppCompatActivity {
             );
         }
     }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == REQUEST_BLUETOOTH_PERMISSIONS) {
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                // Permiso concedido, puedes continuar con la conexión
-                //connectToPrinter();
-            } else {
-                // Permiso denegado, muestra un mensaje o maneja la situación
-                Toast.makeText(this, "Permiso de Bluetooth denegado", Toast.LENGTH_SHORT).show();
-            }
-        }
-    }
-
 
     public void footer() {
         String token = sharedPreferences.getString("token", null);
@@ -412,7 +580,10 @@ public class OrderActivity extends AppCompatActivity {
         });
 
         btnCalendar.setOnClickListener(v -> {
-
+            Intent intent = new Intent(this, CalendarActivity.class);
+            //intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+            startActivity(intent);
+            finish();
         });
 
         BtnAccount.setOnClickListener(v -> {
@@ -421,5 +592,25 @@ public class OrderActivity extends AppCompatActivity {
             startActivity(intent);
             finish();
         });
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == REQUEST_BLUETOOTH_PERMISSIONS) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                // Permiso concedido, puedes continuar con la conexión
+                //connectToPrinter();
+            } else {
+                // Permiso denegado, muestra un mensaje o maneja la situación
+                Toast.makeText(this, "Permiso de Bluetooth denegado", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        loadImageOnResume(); // Reload data and image when the activity resumes
     }
 }
