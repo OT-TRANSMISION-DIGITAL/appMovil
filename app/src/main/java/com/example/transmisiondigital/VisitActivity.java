@@ -5,6 +5,7 @@ import static com.example.transmisiondigital.globalVariables.Conexion.URL;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -27,6 +28,7 @@ import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
+import com.google.android.material.imageview.ShapeableImageView;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -74,11 +76,13 @@ public class VisitActivity extends AppCompatActivity {
         spinnerStatus = findViewById(R.id.spinnerStatus);
         buttonAttend = findViewById(R.id.buttonAttend);
         buttonAttend.setVisibility(View.GONE);
+
         if (sharedPreferences.getString("rol", null).equals("Técnico")) {
             spinnerStatus.setVisibility(View.GONE);
             buttonSave.setVisibility(View.GONE);
             buttonAttend.setVisibility(View.VISIBLE);
         }
+        header();
         String[] items = {"Autorizar", "Finalizar", "Cancelar"};
 
         adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, items);
@@ -92,6 +96,20 @@ public class VisitActivity extends AppCompatActivity {
         buttonSave();
         setButtonAttend();
 
+    }
+
+    public void header() {
+        TextView textViewName = findViewById(R.id.textViewName);
+        String userName = sharedPreferences.getString("userName", "");
+        textViewName.setText(userName);
+        ShapeableImageView imageProfile = findViewById(R.id.imageProfile);
+        String userImage = sharedPreferences.getString("userImage", "");
+        Log.i("userImage", userImage);
+        if (!userImage.isEmpty()) {
+            imageProfile.setImageURI(Uri.parse(userImage));
+        } else {
+            //imageButtonProfile.setImageResource(R.drawable.default_profile_image); // Replace with your default image resource
+        }
     }
 
     public void requestApi() {
@@ -198,7 +216,7 @@ public class VisitActivity extends AppCompatActivity {
         });
     }
 
-    public void setButtonAttend(){
+    public void setButtonAttend() {
         buttonAttend.setOnClickListener(v -> {
             JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.PATCH, URL + "visitas/finalizar/" + idVisit, null, response -> {
                 try {

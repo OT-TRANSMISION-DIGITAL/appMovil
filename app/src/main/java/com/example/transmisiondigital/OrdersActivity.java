@@ -4,10 +4,13 @@ import android.app.DatePickerDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageButton;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
@@ -29,6 +32,7 @@ import com.example.transmisiondigital.adapters.OrderAdapter;
 import com.example.transmisiondigital.globalVariables.Conexion;
 import com.example.transmisiondigital.includes.footerActivity;
 import com.example.transmisiondigital.models.Orders;
+import com.google.android.material.imageview.ShapeableImageView;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -56,9 +60,25 @@ public class OrdersActivity extends AppCompatActivity {
 
         Date currentDate = Calendar.getInstance().getTime();
         SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy");
+        header();
         footer();
         init();
         pickerDate();
+    }
+
+    public void header(){
+        SharedPreferences sharedPreferences = getSharedPreferences("sessionUser", Context.MODE_PRIVATE);
+        TextView textViewName = findViewById(R.id.textViewName);
+        String userName = sharedPreferences.getString("userName", "");
+        textViewName.setText(userName);
+        ShapeableImageView imageProfile = findViewById(R.id.imageProfile);
+        String userImage = sharedPreferences.getString("userImage", "");
+        Log.i("userImage", userImage);
+        if (!userImage.isEmpty()) {
+            imageProfile.setImageURI(Uri.parse(userImage));
+        } else {
+            //imageButtonProfile.setImageResource(R.drawable.default_profile_image); // Replace with your default image resource
+        }
     }
 
     public void init() {

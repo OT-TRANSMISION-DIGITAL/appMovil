@@ -13,12 +13,16 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.media.Image;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.Toast;
 
 import com.android.volley.AuthFailureError;
@@ -26,6 +30,7 @@ import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
+import com.android.volley.toolbox.ImageRequest;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
 import com.example.transmisiondigital.globalVariables.Conexion;
@@ -35,6 +40,8 @@ import com.example.transmisiondigital.services.PusherService;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.Map;
@@ -63,11 +70,8 @@ public class MainActivity extends AppCompatActivity {
         } else {
             startService(new Intent(this, PusherService.class));
         }
-        if (sharedPreferences.contains("token")) {
-            Intent intent = new Intent(MainActivity.this, OrdersActivity.class);
-            startActivity(intent);
-            finish();
-        }
+
+        sharedPreferences();
 
         btnLogin = findViewById(R.id.btnLogin);
         editTextEmail = findViewById(R.id.editTextEmail);
@@ -123,26 +127,32 @@ public class MainActivity extends AppCompatActivity {
                                 String token = response.getString("token");
 
                                 // Extraer el objeto "usuario" del objeto JSON
-                                JSONObject usuario = response.getJSONObject("usuario");
-                                // Extraer el nombre del objeto "usuario"
-                                Integer idUser = usuario.getInt("id");
-                                String userName = usuario.getString("nombre");
-                                Integer idRol = usuario.getInt("rol_id");
+                                JSONObject user = response.getJSONObject("usuario");
+                                Integer idUser = user.getInt("id");
+                                String userName = user.getString("nombre");
+                                Integer idRol = user.getInt("rol_id");
                                 if (idRol == 1) {
                                     rol = "Administrador";
                                 }
                                 if (idRol == 3) {
                                     rol = "Técnico";
                                 }
+                                String userImage = user.optString("img", "");
 
                                 // Guardar el token de autenticación en SharedPreferences
-                                SharedPreferences sharedPreferences = getSharedPreferences("sessionUser", Context.MODE_PRIVATE);
+                                //SharedPreferences sharedPreferences = getSharedPreferences("sessionUser", Context.MODE_PRIVATE);
                                 SharedPreferences.Editor editor = sharedPreferences.edit();
                                 editor.putString("token", token);
                                 editor.putString("userName", userName);
                                 editor.putInt("idUser", idUser);
                                 editor.putInt("idRol", idRol);
                                 editor.putString("rol", rol);
+                                Log.i("Login", "Rol saved: " + rol);
+                                if (!userImage.isEmpty()) {
+                                    loadImage(userImage);
+                                } else {
+                                    editor.putString("userImage", "");
+                                }
                                 editor.apply();
                                 progressDialog.dismiss();
 
@@ -224,5 +234,55 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    public void sharedPreferences() {
+        SharedPreferences sharedPreferences = getSharedPreferences("sessionUser", Context.MODE_PRIVATE);
+        int userId = sharedPreferences.getInt("idUser", -1);
+
+        if (userId == -1) {
+            Log.e("fetchUserImage", "User ID not found in SharedPreferences");
+            return;
+        }
+
+        String url = URL +"usuarios/" + userId;
+
+        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET, url, null, response -> {
+            try {
+                String userImage = response.getString("img");
+                loadImage(userImage);
+                Log.i("fetchUserImage", "User image URL saved: " + userImage);
+                Intent intent = new Intent(MainActivity.this, OrdersActivity.class);
+                startActivity(intent);
+                finish();
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }, error -> {
+            Log.e("fetchUserImage", "Error fetching user image: " + error.getMessage());
+        });
+
+        RequestQueue requestQueue = Volley.newRequestQueue(this);
+        requestQueue.add(jsonObjectRequest);
+    }
+
+    public void loadImage(String urlImage) {
+        ImageRequest imageRequest = new ImageRequest(urlImage, response -> {
+            // Save the Bitmap to the device
+            try {
+                File imageFile = new File(getExternalFilesDir(Environment.DIRECTORY_PICTURES), "signatureOrder.png");
+                FileOutputStream fos = new FileOutputStream(imageFile);
+                response.compress(Bitmap.CompressFormat.PNG, 100, fos);
+                fos.close();
+                Log.i("ImageView", "Image saved to: " + imageFile.getAbsolutePath());
+                sharedPreferences.edit().putString("userImage", imageFile.getAbsolutePath()).apply();
+            } catch (Exception e) {
+                Log.e("ImageView", "Error saving image: " + e.getMessage());
+            }
+        }, 0, 0, ImageView.ScaleType.CENTER_CROP, Bitmap.Config.RGB_565, error -> {
+            Log.e("ImageView", "Error fetching image: " + error.getMessage());
+        });
+
+        RequestQueue requestQueue = Volley.newRequestQueue(MainActivity.this);
+        requestQueue.add(imageRequest);
+    }
 
 }

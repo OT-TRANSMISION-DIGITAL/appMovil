@@ -8,10 +8,13 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Bitmap;
 import android.os.Bundle;
+import android.os.Environment;
 import android.util.Log;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.Toast;
 
 import com.android.volley.AuthFailureError;
@@ -19,12 +22,15 @@ import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
+import com.android.volley.toolbox.ImageRequest;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.Map;
@@ -34,6 +40,8 @@ public class VerificarCodigoActivity extends AppCompatActivity {
     private EditText editTextCodigo;
     private Button btnVerificarCodigo;
     private ProgressDialog progressDialog;
+    private SharedPreferences sharedPreferences;
+    private String rol;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,6 +50,7 @@ public class VerificarCodigoActivity extends AppCompatActivity {
 
         Intent intent = getIntent();
         String signedUrl = intent.getStringExtra("signedUrl");
+        sharedPreferences = getSharedPreferences("sessionUser", Context.MODE_PRIVATE);
 
         editTextCodigo = findViewById(R.id.editTextCodigo);
         btnVerificarCodigo = findViewById(R.id.btnVerificarCodigo);
@@ -87,14 +96,30 @@ public class VerificarCodigoActivity extends AppCompatActivity {
                         String token = response.getString("token");
 
                         JSONObject user = response.getJSONObject("usuario");
+                        Integer idUser = user.getInt("id");
+                        String userName = user.getString("nombre");
+                        Integer idRol = user.getInt("rol_id");
+                        if (idRol == 1) {
+                            rol = "Administrador";
+                        }
+                        if (idRol == 3) {
+                            rol = "Técnico";
+                        }
+                        String userImage = user.optString("img", "");
 
-                        // Guardar el token de autenticación en SharedPreferences
-                        SharedPreferences sharedPreferences = getSharedPreferences("sessionUser", Context.MODE_PRIVATE);
                         SharedPreferences.Editor editor = sharedPreferences.edit();
                         editor.putString("token", token);
-                        editor.putInt("idUser", user.getInt("id"));
+                        editor.putString("userName", userName);
+                        editor.putInt("idUser", idUser);
+                        editor.putInt("idRol", idRol);
+                        editor.putString("rol", rol);
+                        Log.i("Login", "Rol saved: " + rol);
+                        if (!userImage.isEmpty()) {
+                            loadImage(userImage);
+                        } else {
+                            editor.putString("userImage", "");
+                        }
                         editor.apply();
-
                         progressDialog.dismiss();
 
                         Intent intent = new Intent(VerificarCodigoActivity.this, OrdersActivity.class);
@@ -148,5 +173,25 @@ public class VerificarCodigoActivity extends AppCompatActivity {
             RequestQueue queue = Volley.newRequestQueue(VerificarCodigoActivity.this);
             queue.add(request);
         });
+    }
+    public void loadImage(String urlImage) {
+        ImageRequest imageRequest = new ImageRequest(urlImage, response -> {
+            // Save the Bitmap to the device
+            try {
+                File imageFile = new File(getExternalFilesDir(Environment.DIRECTORY_PICTURES), "signatureOrder.png");
+                FileOutputStream fos = new FileOutputStream(imageFile);
+                response.compress(Bitmap.CompressFormat.PNG, 100, fos);
+                fos.close();
+                Log.i("ImageView", "Image saved to: " + imageFile.getAbsolutePath());
+                sharedPreferences.edit().putString("userImage", imageFile.getAbsolutePath()).apply();
+            } catch (Exception e) {
+                Log.e("ImageView", "Error saving image: " + e.getMessage());
+            }
+        }, 0, 0, ImageView.ScaleType.CENTER_CROP, Bitmap.Config.RGB_565, error -> {
+            Log.e("ImageView", "Error fetching image: " + error.getMessage());
+        });
+
+        RequestQueue requestQueue = Volley.newRequestQueue(VerificarCodigoActivity.this);
+        requestQueue.add(imageRequest);
     }
 }

@@ -11,6 +11,7 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
@@ -52,6 +53,7 @@ import com.dantsu.escposprinter.exceptions.EscPosEncodingException;
 import com.dantsu.escposprinter.exceptions.EscPosParserException;
 import com.dantsu.escposprinter.textparser.PrinterTextParserImg;
 import com.example.transmisiondigital.request.MultipartRequest;
+import com.google.android.material.imageview.ShapeableImageView;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -111,13 +113,14 @@ public class OrderActivity extends AppCompatActivity {
         buttonSaveTechnical = findViewById(R.id.buttonSaveTechnical);
         progressBar = findViewById(R.id.progressBar);
         progressBar.setVisibility(View.GONE);
+        //Log.i("rol", "rol: " + sharedPreferences.getString("rol", null));
 
         if (sharedPreferences.getString("rol", null).equals("Técnico")) {
             spinnerStatus.setVisibility(View.GONE);
             buttonSave.setVisibility(View.GONE);
             buttonPrint.setVisibility(View.VISIBLE);
             buttonSigned.setVisibility(View.VISIBLE);
-            imageViewSignature.setVisibility(View.VISIBLE);
+            //imageViewSignature.setVisibility(View.VISIBLE);
             buttonSaveTechnical.setVisibility(View.VISIBLE);
         }
         spinnerStatus = findViewById(R.id.spinnerStatus);
@@ -131,13 +134,27 @@ public class OrderActivity extends AppCompatActivity {
 
         // Apply the adapter to the spinner
         spinnerStatus.setAdapter(adapter);
-
+        header();
         init();
         buttonSave();
         buttonPrint();
         buttonSigned();
         buttonSaveTechnical();
         footer();
+    }
+
+    public void header(){
+        TextView textViewName = findViewById(R.id.textViewName);
+        String userName = sharedPreferences.getString("userName", "");
+        textViewName.setText(userName);
+        ShapeableImageView imageProfile = findViewById(R.id.imageProfile);
+        String userImage = sharedPreferences.getString("userImage", "");
+        Log.i("userImage", userImage);
+        if (!userImage.isEmpty()) {
+            imageProfile.setImageURI(Uri.parse(userImage));
+        } else {
+            //imageButtonProfile.setImageResource(R.drawable.default_profile_image); // Replace with your default image resource
+        }
     }
 
     public void init() {

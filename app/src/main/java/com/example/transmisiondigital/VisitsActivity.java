@@ -5,6 +5,7 @@ import static com.example.transmisiondigital.globalVariables.Conexion.URL;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -31,6 +32,7 @@ import com.example.transmisiondigital.adapters.VisitAdapter;
 import com.example.transmisiondigital.includes.footerActivity;
 import com.example.transmisiondigital.models.Orders;
 import com.example.transmisiondigital.models.Visits;
+import com.google.android.material.imageview.ShapeableImageView;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -50,13 +52,26 @@ public class VisitsActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_visits);
+        header();
+        footer();
+        init();
+    }
 
-        // Encuentra el TextView del header y cambia el título
+    public void header(){
+        SharedPreferences sharedPreferences = getSharedPreferences("sessionUser", Context.MODE_PRIVATE);
+        TextView textViewName = findViewById(R.id.textViewName);
+        String userName = sharedPreferences.getString("userName", "");
+        textViewName.setText(userName);
         TextView textViewTitle = findViewById(R.id.textViewTitle);
         textViewTitle.setText("VISITAS");
-        footer();
-        //footer = new footerActivity(this);
-        init();
+        ShapeableImageView imageProfile = findViewById(R.id.imageProfile);
+        String userImage = sharedPreferences.getString("userImage", "");
+        Log.i("userImage", userImage);
+        if (!userImage.isEmpty()) {
+            imageProfile.setImageURI(Uri.parse(userImage));
+        } else {
+            //imageButtonProfile.setImageResource(R.drawable.default_profile_image); // Replace with your default image resource
+        }
     }
 
     public void init(){
