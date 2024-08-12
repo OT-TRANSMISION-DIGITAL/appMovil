@@ -66,7 +66,7 @@ public class CalendarActivity extends AppCompatActivity {
         setContentView(R.layout.activity_calendar);
         sharedPreferences = getSharedPreferences("sessionUser", Context.MODE_PRIVATE);
         Date date = new Date();
-        SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy", Locale.getDefault());
+        SimpleDateFormat dateFormat = new SimpleDateFormat("MM-dd-yyyy", Locale.getDefault());
         dateFilter = dateFormat.format(date);
         header();
         footer();
@@ -94,8 +94,11 @@ public class CalendarActivity extends AppCompatActivity {
     }
 
     public void pickerDate() {
+        Date date = new Date();
         buttonDatePicker = findViewById(R.id.buttonDatePicker);
-        buttonDatePicker.setText(" FECHA: " + dateFilter + " ");
+        SimpleDateFormat dateFormatInit = new SimpleDateFormat("dd-MM-yyyy", Locale.getDefault());
+        String formattedDateInit = dateFormatInit.format(date);
+        buttonDatePicker.setText(" FECHA: " + formattedDateInit + " ");
         buttonDatePicker.setOnClickListener(v -> {
             final java.util.Calendar calendar = java.util.Calendar.getInstance();
             int year = calendar.get(java.util.Calendar.YEAR);
@@ -126,7 +129,6 @@ public class CalendarActivity extends AppCompatActivity {
             datePickerDialog.show();
         });
     }
-
 
     public void spinnerSetUp() {
         spinnerType = findViewById(R.id.spinnerType);

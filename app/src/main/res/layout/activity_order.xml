@@ -236,6 +236,23 @@
             />
 
         <Button
+            android:id="@+id/buttonEditProducts"
+            android:layout_width="200dp"
+            android:layout_height="40dp"
+            android:layout_marginBottom="50dp"
+            android:text="Editar productos"
+            android:textSize="25dp"
+            android:visibility="gone"
+            android:layout_marginTop="20dp"
+            android:layout_marginStart="25dp"
+            android:background="@drawable/button_border"
+            android:textColor="@color/baseColor"
+            android:textAllCaps="false"
+            app:layout_constraintTop_toBottomOf="@id/textViewTotal"
+            app:layout_constraintStart_toStartOf="parent"
+            />
+
+        <Button
             android:id="@+id/buttonSaveTechnical"
             android:layout_width="120dp"
             android:layout_height="40dp"
