@@ -5,7 +5,9 @@ import static com.example.transmisiondigital.globalVariables.Conexion.URL;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.os.Build;
 import android.os.Bundle;
 
 import com.android.volley.Request;
@@ -13,6 +15,7 @@ import com.android.volley.RequestQueue;
 import com.android.volley.toolbox.ImageRequest;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
+import com.example.transmisiondigital.services.PusherService;
 import com.google.android.material.snackbar.Snackbar;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -23,6 +26,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
 
+import androidx.core.app.ActivityCompat;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.navigation.ui.AppBarConfiguration;
@@ -37,12 +41,22 @@ import java.io.FileOutputStream;
 
 public class SplashActivity extends AppCompatActivity {
     private SharedPreferences sharedPreferences;
+    private static final int REQUEST_CODE_POST_NOTIFICATIONS = 5;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_splash);
         sharedPreferences = getSharedPreferences("sessionUser", Context.MODE_PRIVATE);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ActivityCompat.checkSelfPermission(this, "android.permission.POST_NOTIFICATIONS") != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this, new String[]{"android.permission.POST_NOTIFICATIONS"}, REQUEST_CODE_POST_NOTIFICATIONS);
+            } else {
+                startService(new Intent(this, PusherService.class));
+            }
+        } else {
+            startService(new Intent(this, PusherService.class));
+        }
         sharedPreferences();
     }
 
