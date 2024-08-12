@@ -4,6 +4,7 @@ import static com.example.transmisiondigital.globalVariables.Conexion.URL;
 
 import android.Manifest;
 import android.app.ProgressDialog;
+import android.app.TimePickerDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.content.Context;
 import android.content.Intent;
@@ -56,6 +57,7 @@ import com.example.transmisiondigital.models.Orders;
 import com.example.transmisiondigital.models.Products;
 import com.example.transmisiondigital.request.MultipartRequest;
 import com.google.android.material.imageview.ShapeableImageView;
+import com.google.android.material.snackbar.Snackbar;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -69,19 +71,22 @@ import java.io.UnsupportedEncodingException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 
 public class OrderActivity extends AppCompatActivity {
 
-    private String idOrder, sucursalName, firmaUrl, clienteNombre, tecnicoNombre, fechaHoraSolicitudStr, fechaHoraLLegadaStr, fechaHoraSalidaStr, personaSolicitante, direccion, puesto;
+    private String idOrder, sucursalName, firmaUrl, clienteNombre, tecnicoNombre, fechaHoraSolicitudStr, fechaHoraLLegadaStr, fechaHoraSalidaStr, personaSolicitante, direccion, puesto, horaLlegada;
     private int clienteId, sucursalId;
     private SharedPreferences sharedPreferences;
     private TextView textViewFolio, textViewDate, textViewHour, textViewAddress, textViewCustomer;
     private LinearLayout container;
     private TextView textViewTechnical, textViewApplicant, textViewPosition, textViewStatus, textViewEntryTime, textViewDepartureTime, textViewTotal;
     private Spinner spinnerStatus;
-    private Button buttonSave, buttonPrint, buttonSigned, buttonSaveTechnical, buttonEditProducts;
+    private Button buttonSave, buttonPrint, buttonSigned, buttonSaveTechnical, buttonEditProducts, buttonSetHour;
     private ImageView imageViewSignature;
     private ArrayAdapter<String> adapter;
     private static final int REQUEST_ENABLE_BT = 1;
@@ -120,7 +125,7 @@ public class OrderActivity extends AppCompatActivity {
         buttonEditProducts = findViewById(R.id.buttonEditProducts);
         progressBar = findViewById(R.id.progressBar);
         progressBar.setVisibility(View.GONE);
-        //Log.i("rol", "rol: " + sharedPreferences.getString("rol", null));
+        buttonSetHour = findViewById(R.id.buttonSetHour);
 
         if (sharedPreferences.getString("rol", null).equals("Técnico")) {
             spinnerStatus.setVisibility(View.GONE);
@@ -129,25 +134,17 @@ public class OrderActivity extends AppCompatActivity {
             buttonSigned.setVisibility(View.VISIBLE);
             buttonSaveTechnical.setVisibility(View.VISIBLE);
             buttonEditProducts.setVisibility(View.VISIBLE);
+            buttonSetHour.setVisibility(View.VISIBLE);
         }
-        spinnerStatus = findViewById(R.id.spinnerStatus);
-        String[] items = {"Autorizar", "Finalizar", "Cancelar"};
-
-        // Create an ArrayAdapter using the string array and a default spinner layout
-        adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, items);
-
-        // Specify the layout to use when the list of choices appears
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-
-        // Apply the adapter to the spinner
-        spinnerStatus.setAdapter(adapter);
         header();
+        setUpSpinner();
         init();
         buttonSave();
         buttonPrint();
         buttonSigned();
         setButtonEditProducts();
         buttonSaveTechnical();
+        setHour();
         footer();
     }
 
@@ -225,6 +222,10 @@ public class OrderActivity extends AppCompatActivity {
                 textViewDepartureTime.setText("Hora de salida: " + horaSalida);
 
                 if (estatus.equals("Finalizada")) {
+                    buttonSetHour.setVisibility(View.GONE);
+                    buttonSaveTechnical.setVisibility(View.GONE);
+                    buttonEditProducts.setVisibility(View.GONE);
+                    buttonSigned.setVisibility(View.GONE);
                     estatus = "Finalizar";
                 } else if (estatus.equals("Autorizada")) {
                     estatus = "Autorizar";
@@ -283,6 +284,20 @@ public class OrderActivity extends AppCompatActivity {
 
     }
 
+    public void setUpSpinner() {
+        spinnerStatus = findViewById(R.id.spinnerStatus);
+        String[] items = {"Autorizar", "Finalizar", "Cancelar"};
+
+        // Create an ArrayAdapter using the string array and a default spinner layout
+        adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, items);
+
+        // Specify the layout to use when the list of choices appears
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+
+        // Apply the adapter to the spinner
+        spinnerStatus.setAdapter(adapter);
+    }
+
     public void buttonSave() {
         buttonSave.setOnClickListener(v -> {
             String status = spinnerStatus.getSelectedItem().toString();
@@ -299,16 +314,6 @@ public class OrderActivity extends AppCompatActivity {
                 try {
                     String message = response.getString("msg");
                     Toast.makeText(OrderActivity.this, message, Toast.LENGTH_SHORT).show();
-                    // Create a Handler to introduce a delay
-                    Handler handler = new Handler(Looper.getMainLooper());
-
-                    // Post a Runnable with a delay of 2 seconds (2000 milliseconds)
-                    handler.postDelayed(new Runnable() {
-                        @Override
-                        public void run() {
-                            init();
-                        }
-                    }, 2000);
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
@@ -397,7 +402,23 @@ public class OrderActivity extends AppCompatActivity {
         buttonSaveTechnical.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                progressBar.setVisibility(View.VISIBLE);
+                String entryTimeText = textViewEntryTime.getText().toString();
+                if (entryTimeText.contains("Hora de llegada: ")) {
+                    Log.i("", entryTimeText);
+                    String[] parts = entryTimeText.split("Hora de llegada: ");
+                    if (parts.length > 1 && !parts[1].trim().isEmpty()) {
+                        horaLlegada = parts[1];
+                    } else {
+                        horaLlegada = "";
+                    }
+                } else {
+                    horaLlegada = "";
+                }
+
+                if (horaLlegada.isEmpty()) {
+                    Toast.makeText(OrderActivity.this, "Debe seleccionar una hora de llegada", Toast.LENGTH_SHORT).show();
+                    return;
+                }
                 // Path to the image file
                 File imageFile = new File(getExternalFilesDir(Environment.DIRECTORY_PICTURES), "signatureOrder_" + idOrder + ".png");
 
@@ -422,8 +443,6 @@ public class OrderActivity extends AppCompatActivity {
                         try {
                             String responseBody = new String(response.data, "utf-8");
                             Log.i("ImagenPeticion", "Response: " + responseBody);
-
-                            // Delete the image file after successful upload
                             if (imageFile.delete()) {
                                 Log.i("ImageView", "Image file deleted: " + imageFile.getAbsolutePath());
                             } else {
@@ -445,18 +464,9 @@ public class OrderActivity extends AppCompatActivity {
                 JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.PATCH, URL + "ordenes/finalizar/" + idOrder, null, response -> {
                     try {
                         String message = response.getString("msg");
-                        Toast.makeText(OrderActivity.this, message, Toast.LENGTH_SHORT).show();
-                        // Create a Handler to introduce a delay
-                        Handler handler = new Handler(Looper.getMainLooper());
+                        //Toast.makeText(OrderActivity.this, message, Toast.LENGTH_SHORT).show();
+                        updateEntryTime();
 
-                        progressBar.setVisibility(View.GONE);
-                        // Post a Runnable with a delay of 2 seconds (2000 milliseconds)
-                        handler.postDelayed(new Runnable() {
-                            @Override
-                            public void run() {
-                                init();
-                            }
-                        }, 2000);
                     } catch (JSONException e) {
                         e.printStackTrace();
                     }
@@ -497,6 +507,108 @@ public class OrderActivity extends AppCompatActivity {
             intent.putExtra("sucursalId", sucursalId);
             startActivity(intent);
         });
+    }
+
+    public void setHour() {
+        buttonSetHour.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // Get the current time
+                Calendar calendar = Calendar.getInstance();
+                int currentHour = calendar.get(Calendar.HOUR_OF_DAY);
+                int currentMinute = calendar.get(Calendar.MINUTE);
+
+                // Subtract one hour from the current time
+                calendar.add(Calendar.HOUR_OF_DAY, -1);
+                int defaultHour = calendar.get(Calendar.HOUR_OF_DAY);
+                int defaultMinute = calendar.get(Calendar.MINUTE);
+
+                // Open a time picker dialog with the default time set to one hour less than the current time
+                TimePickerDialog timePickerDialog = new TimePickerDialog(OrderActivity.this, (view, hourOfDay, minute) -> {
+                    // Set the selected time to the textViewHour
+                    String selectedTime = String.format(Locale.getDefault(), "%02d:%02d", hourOfDay, minute);
+                    Log.d("HourSelected", "onClick: " + selectedTime);
+                    textViewEntryTime.setText("Hora de llegada: " + selectedTime);
+                }, defaultHour, defaultMinute, true);
+
+                timePickerDialog.show();
+            }
+        });
+    }
+
+    public void updateEntryTime() {
+        Calendar calendar = Calendar.getInstance();
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+        String currentDate = dateFormat.format(calendar.getTime());
+
+        // Combine current date with horaLlegada and add seconds as 00
+        String formattedDateTime = currentDate + " " + horaLlegada + ":00";
+        horaLlegada = formattedDateTime;
+
+        SimpleDateFormat dateTimeFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
+        String fechaHoraSalida = dateTimeFormat.format(calendar.getTime());
+        JSONObject order = new JSONObject();
+        try {
+            order.put("fechaHoraSolicitud", fechaHoraSolicitudStr != null && !fechaHoraSolicitudStr.isEmpty() ? fechaHoraSolicitudStr : JSONObject.NULL);
+            order.put("fechaHoraLlegada", horaLlegada );
+            order.put("fechaHoraSalida", fechaHoraSalida);
+            order.put("persona_solicitante", personaSolicitante);
+            order.put("direccion", direccion);
+            order.put("puesto", puesto);
+            order.put("cliente_id", clienteId);
+            order.put("sucursal_id", sucursalId);
+            order.put("tecnico_id", sharedPreferences.getInt("idUser", 0));
+            JSONArray products = new JSONArray();
+            for (int i = 0; i < detallesArray.length(); i++) {
+                JSONObject detalle = detallesArray.getJSONObject(i);
+
+                // Obtén el objeto "producto"
+                JSONObject producto = detalle.getJSONObject("producto");
+
+                // Crear un nuevo JSONObject para el producto
+                JSONObject product = new JSONObject();
+                product.put("cantidad", detalle.getString("cantidad"));
+                product.put("descripcion", "Editar");
+                product.put("producto_id", producto.getInt("id"));
+
+                // Agregar el JSONObject del producto al JSONArray
+                products.put(product);
+            }
+
+            // Agregar el JSONArray al objeto de la orden
+            order.put("detalles", products);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.PUT, URL + "ordenes/" + idOrder, order, response -> {
+            try {
+                String msg = response.getString("msg");
+                Snackbar.make(findViewById(android.R.id.content), msg, Snackbar.LENGTH_LONG).show();
+                Intent intent = new Intent(OrderActivity.this, OrdersActivity.class);
+                startActivity(intent);
+                finish();
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }, error -> {
+            try {
+                String responseBody = new String(error.networkResponse.data, "utf-8");
+                JSONObject jsonObject = new JSONObject(responseBody);
+                JSONObject errors = jsonObject.getJSONObject("errors");
+                for (Iterator<String> it = errors.keys(); it.hasNext(); ) {
+                    String key = it.next();
+                    JSONArray errorMessages = errors.getJSONArray(key);
+                    for (int i = 0; i < errorMessages.length(); i++) {
+                        Log.e("Volley Error", key + ": " + errorMessages.getString(i));
+                    }
+                }
+            } catch (Exception e) {
+                Log.e("Volley Error", e.toString());
+            }
+        });
+
+        RequestQueue requestQueue = Volley.newRequestQueue(this);
+        requestQueue.add(jsonObjectRequest);
     }
 
     public void buttonPrint() {

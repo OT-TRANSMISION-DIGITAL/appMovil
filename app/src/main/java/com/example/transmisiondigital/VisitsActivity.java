@@ -222,7 +222,6 @@ public class VisitsActivity extends AppCompatActivity {
         SimpleDateFormat dateFormatInit = new SimpleDateFormat("dd-MM-yyyy", Locale.getDefault());
         String formattedDateInit = dateFormatInit.format(date);
         buttonDatePicker.setText(" FECHA: " + formattedDateInit + " ");
-        //buttonDatePicker.setText(" FECHA: " + dateFilter + " ");
         buttonDatePicker.setOnClickListener(v -> {
             final java.util.Calendar calendar = java.util.Calendar.getInstance();
             int year = calendar.get(java.util.Calendar.YEAR);

@@ -158,6 +158,7 @@ public class VisitActivity extends AppCompatActivity {
                 tecnicoId = data.optString("tecnico_id", "");
                 clienteId = data.optString("cliente_id", "");
                 sucursalId = data.optString("sucursal_id", "");
+                String estatus = data.getString("estatus");
 
                 textViewFolio.setText("Folio: " + data.getString("id"));
                 textViewReason.setText("Motivo: " + motivo);
@@ -168,6 +169,16 @@ public class VisitActivity extends AppCompatActivity {
                 textViewTechnical.setText("Tecnico: " + tecnicoNombre);
                 textViewStatus.setText("Estatus: " + data.getString("estatus"));
                 textViewEntryTime.setText("Hora de llegada: " + horaLlegada);
+
+                if (estatus.equals("Finalizada")) {
+                    buttonSetHour.setVisibility(View.GONE);
+                    buttonAttend.setVisibility(View.GONE);
+                    estatus = "Finalizar";
+                } else if (estatus.equals("Autorizada")) {
+                    estatus = "Autorizar";
+                } else if (estatus.equals("Cancelada")) {
+                    estatus = "Cancelar";
+                }
             } catch (JSONException e) {
                 e.printStackTrace();
             }

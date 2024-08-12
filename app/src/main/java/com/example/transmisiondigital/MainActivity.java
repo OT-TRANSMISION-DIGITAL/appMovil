@@ -71,8 +71,6 @@ public class MainActivity extends AppCompatActivity {
             startService(new Intent(this, PusherService.class));
         }
 
-        sharedPreferences();
-
         btnLogin = findViewById(R.id.btnLogin);
         editTextEmail = findViewById(R.id.editTextEmail);
         editTextPassword = findViewById(R.id.editTextPassword);
@@ -232,36 +230,6 @@ public class MainActivity extends AppCompatActivity {
                 Log.e("Notification", "Permission for posting notifications denied.");
             }
         }
-    }
-
-    public void sharedPreferences() {
-        SharedPreferences sharedPreferences = getSharedPreferences("sessionUser", Context.MODE_PRIVATE);
-        int userId = sharedPreferences.getInt("idUser", -1);
-
-        if (userId == -1) {
-            Log.e("fetchUserImage", "User ID not found in SharedPreferences");
-            return;
-        }
-
-        String url = URL +"usuarios/" + userId;
-
-        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET, url, null, response -> {
-            try {
-                String userImage = response.getString("img");
-                loadImage(userImage);
-                Log.i("fetchUserImage", "User image URL saved: " + userImage);
-                Intent intent = new Intent(MainActivity.this, OrdersActivity.class);
-                startActivity(intent);
-                finish();
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-        }, error -> {
-            Log.e("fetchUserImage", "Error fetching user image: " + error.getMessage());
-        });
-
-        RequestQueue requestQueue = Volley.newRequestQueue(this);
-        requestQueue.add(jsonObjectRequest);
     }
 
     public void loadImage(String urlImage) {
