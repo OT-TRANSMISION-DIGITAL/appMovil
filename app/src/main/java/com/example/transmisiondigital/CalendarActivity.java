@@ -6,6 +6,7 @@ import android.app.DatePickerDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -36,6 +37,7 @@ import com.example.transmisiondigital.adapters.CalendarAdapter;
 import com.example.transmisiondigital.adapters.OrderAdapter;
 import com.example.transmisiondigital.models.Calendar;
 import com.example.transmisiondigital.models.Orders;
+import com.google.android.material.imageview.ShapeableImageView;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -66,8 +68,7 @@ public class CalendarActivity extends AppCompatActivity {
         Date date = new Date();
         SimpleDateFormat dateFormat = new SimpleDateFormat("MM-dd-yyyy", Locale.getDefault());
         dateFilter = dateFormat.format(date);
-        TextView textViewTitle = findViewById(R.id.textViewTitle);
-        textViewTitle.setText("AGENDA");
+        header();
         footer();
         spinnerSetUp();
         pickerDate();
@@ -75,9 +76,29 @@ public class CalendarActivity extends AppCompatActivity {
         init(dateFilter, selectedItem);
     }
 
+    public void header() {
+        SharedPreferences sharedPreferences = getSharedPreferences("sessionUser", Context.MODE_PRIVATE);
+        TextView textViewTitle = findViewById(R.id.textViewTitle);
+        textViewTitle.setText("AGENDA");
+        TextView textViewName = findViewById(R.id.textViewName);
+        String userName = sharedPreferences.getString("userName", "");
+        textViewName.setText(userName);
+        ShapeableImageView imageProfile = findViewById(R.id.imageProfile);
+        String userImage = sharedPreferences.getString("userImage", "");
+        Log.i("userImage", userImage);
+        if (!userImage.isEmpty()) {
+            imageProfile.setImageURI(Uri.parse(userImage));
+        } else {
+            //imageButtonProfile.setImageResource(R.drawable.default_profile_image); // Replace with your default image resource
+        }
+    }
+
     public void pickerDate() {
+        Date date = new Date();
         buttonDatePicker = findViewById(R.id.buttonDatePicker);
-        buttonDatePicker.setText(" FECHA: " + dateFilter + " ");
+        SimpleDateFormat dateFormatInit = new SimpleDateFormat("dd-MM-yyyy", Locale.getDefault());
+        String formattedDateInit = dateFormatInit.format(date);
+        buttonDatePicker.setText(" FECHA: " + formattedDateInit + " ");
         buttonDatePicker.setOnClickListener(v -> {
             final java.util.Calendar calendar = java.util.Calendar.getInstance();
             int year = calendar.get(java.util.Calendar.YEAR);
@@ -108,7 +129,6 @@ public class CalendarActivity extends AppCompatActivity {
             datePickerDialog.show();
         });
     }
-
 
     public void spinnerSetUp() {
         spinnerType = findViewById(R.id.spinnerType);
@@ -143,11 +163,18 @@ public class CalendarActivity extends AppCompatActivity {
         String queryParams = null;
 
         try {
-            queryParams = String.format(Locale.US, "?fecha=%s&estatus=%s&tipo=%s&tecnico=%s",
-                    URLEncoder.encode(dateFilter, "UTF-8"),
-                    URLEncoder.encode("Autorizada", "UTF-8"),
-                    URLEncoder.encode(type, "UTF-8"),
-                    URLEncoder.encode(Integer.toString(sharedPreferences.getInt("idUser", 0)), "UTF-8"));
+            String rol = sharedPreferences.getString("rol", "");
+            if ("Administrador".equals(rol)) {
+                queryParams = String.format(Locale.US, "?fecha=%s&tipo=%s",
+                        URLEncoder.encode(dateFilter, "UTF-8"),
+                        URLEncoder.encode(type, "UTF-8"));
+            } else {
+                queryParams = String.format(Locale.US, "?fecha=%s&estatus=%s&tipo=%s&tecnico=%s",
+                        URLEncoder.encode(dateFilter, "UTF-8"),
+                        URLEncoder.encode("Autorizada", "UTF-8"),
+                        URLEncoder.encode(type, "UTF-8"),
+                        URLEncoder.encode(Integer.toString(sharedPreferences.getInt("idUser", 0)), "UTF-8"));
+            }
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException(e);
         }

@@ -19,6 +19,14 @@
         android:layout_height="wrap_content"
         app:layout_constraintTop_toTopOf="parent" />
 
+        <ProgressBar
+            android:id="@+id/progressBar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:visibility="gone"
+            tools:ignore="MissingConstraints" />
+
     <View
         android:id="@+id/topLine"
         android:layout_width="match_parent"
@@ -228,11 +236,28 @@
             />
 
         <Button
-            android:id="@+id/buttonPrint"
+            android:id="@+id/buttonEditProducts"
+            android:layout_width="200dp"
+            android:layout_height="40dp"
+            android:layout_marginBottom="50dp"
+            android:text="Editar productos"
+            android:textSize="25dp"
+            android:visibility="gone"
+            android:layout_marginTop="20dp"
+            android:layout_marginStart="25dp"
+            android:background="@drawable/button_border"
+            android:textColor="@color/baseColor"
+            android:textAllCaps="false"
+            app:layout_constraintTop_toBottomOf="@id/textViewTotal"
+            app:layout_constraintStart_toStartOf="parent"
+            />
+
+        <Button
+            android:id="@+id/buttonSaveTechnical"
             android:layout_width="120dp"
             android:layout_height="40dp"
             android:layout_marginBottom="50dp"
-            android:text="Imprimir"
+            android:text="Finalizar"
             android:textSize="25dp"
             android:visibility="gone"
             app:layout_constraintTop_toBottomOf="@id/textViewTotal"
@@ -244,12 +269,71 @@
             android:textAllCaps="false"
             />
 
+        <Button
+            android:id="@+id/buttonPrint"
+            android:layout_width="120dp"
+            android:layout_height="40dp"
+            android:layout_marginBottom="50dp"
+            android:text="Imprimir"
+            android:textSize="25dp"
+            android:visibility="gone"
+            app:layout_constraintTop_toBottomOf="@id/textViewTotal"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="80dp"
+            android:layout_marginEnd="25dp"
+            android:background="@drawable/button_border"
+            android:textColor="@color/baseColor"
+            android:textAllCaps="false"
+            />
+
+        <Button
+            android:id="@+id/buttonSigned"
+            android:layout_width="120dp"
+            android:layout_height="40dp"
+            android:layout_marginBottom="50dp"
+            android:text="Firmar"
+            android:textSize="25dp"
+            android:visibility="gone"
+            app:layout_constraintTop_toBottomOf="@id/textViewTotal"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="80dp"
+            android:layout_marginStart="25dp"
+            android:background="@drawable/button_border"
+            android:textColor="@color/baseColor"
+            android:textAllCaps="false"
+            />
+
+        <Button
+            android:id="@+id/buttonSetHour"
+            android:layout_width="300dp"
+            android:layout_height="40dp"
+            android:layout_marginTop="15dp"
+            android:background="@drawable/button_border"
+            android:text="Asignar Hora de llegada"
+            android:textAllCaps="false"
+            android:textColor="@color/baseColor"
+            android:textSize="25dp"
+            android:visibility="gone"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/buttonSigned" />
+
+        <ImageView
+            android:id="@+id/imageViewSignature"
+            android:layout_width="match_parent"
+            android:layout_height="150dp"
+            android:layout_marginTop="190dp"
+            app:layout_constraintTop_toBottomOf="@id/textViewTotal"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:contentDescription="Firma" />
+
 
         <View
             android:id="@+id/bottomLine"
             android:layout_width="match_parent"
             android:layout_height="1dp"
-            android:layout_marginTop="80dp"
+            android:layout_marginTop="370dp"
             android:layout_marginStart="25dp"
             android:layout_marginEnd="25dp"
             android:background="@color/baseColor"

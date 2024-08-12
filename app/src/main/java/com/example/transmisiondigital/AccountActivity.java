@@ -7,6 +7,7 @@ import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -22,10 +23,12 @@ import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
 import com.example.transmisiondigital.globalVariables.Conexion;
+import com.google.android.material.imageview.ShapeableImageView;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.Map;
@@ -37,15 +40,18 @@ public class AccountActivity extends AppCompatActivity {
     private String URL = Conexion.URL;
     private TextView textViewUserName, textViewUserRol, textViewCode;
     private View bottomLineCode;
+    private ShapeableImageView imageProfile;
+    private SharedPreferences sharedPreferences;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_account);
+        sharedPreferences = getSharedPreferences("sessionUser", Context.MODE_PRIVATE);
 
         buttonLogout = findViewById(R.id.buttonLogout);
         buttonGenerateCode = findViewById(R.id.buttonGenerateCode);
 
-        SharedPreferences sharedPreferences = getSharedPreferences("sessionUser", Context.MODE_PRIVATE);
         String token = sharedPreferences.getString("token", null);
         Integer idUser = sharedPreferences.getInt("idUser", 0);
         String name = sharedPreferences.getString("userName", null);
@@ -55,10 +61,11 @@ public class AccountActivity extends AppCompatActivity {
         textViewUserRol = findViewById(R.id.textViewUserRol);
         textViewCode = findViewById(R.id.textViewCode);
         bottomLineCode = findViewById(R.id.bottomLineCode);
+        imageProfile = findViewById(R.id.imageViewUser);
 
         textViewUserName.setText(name);
         textViewUserRol.setText(rol);
-
+        loadImage();
         footer();
 
         buttonLogout.setOnClickListener(v -> {
@@ -70,26 +77,23 @@ public class AccountActivity extends AppCompatActivity {
             JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, url, null, new Response.Listener<JSONObject>() {
                 @Override
                 public void onResponse(JSONObject response) {
-                    // Manejar la respuesta del servidor
+                    SharedPreferences sharedPreferences = getSharedPreferences("sessionUser", Context.MODE_PRIVATE);
+                    SharedPreferences.Editor editor = sharedPreferences.edit();
+                    String userImage = sharedPreferences.getString("userImage", "");
+                    if (!userImage.isEmpty()) {
+                        // Delete the image file from the device
+                        File imageFile = new File(Uri.parse(userImage).getPath());
+                        if (imageFile.exists()) {
+                            imageFile.delete();
+                        }
+                    }
+                    editor.clear();
+                    editor.apply();
+                    progressDialog.dismiss();
 
-                        // Extraer el token del objeto JSON
-                        //String token = response.getString("token");
-
-                        //JSONObject usuario = response.getJSONObject("usuario");
-
-                        // Guardar el token de autenticación en SharedPreferences
-                        SharedPreferences sharedPreferences = getSharedPreferences("sessionUser", Context.MODE_PRIVATE);
-                        SharedPreferences.Editor editor = sharedPreferences.edit();
-                        editor.clear();
-                        editor.apply();
-
-                        // Manejar el token según sea necesario
-                        //Log.d("Token", "Token obtenido: " + token);
-                        progressDialog.dismiss();
-
-                        Intent intent = new Intent(AccountActivity.this, MainActivity.class);
-                        startActivity(intent);
-                        finish();
+                    Intent intent = new Intent(AccountActivity.this, MainActivity.class);
+                    startActivity(intent);
+                    finish();
                 }
             }, new Response.ErrorListener() {
                 @Override
@@ -121,7 +125,7 @@ public class AccountActivity extends AppCompatActivity {
                     Toast.makeText(AccountActivity.this, mensajeError, Toast.LENGTH_SHORT).show();
                 }
             }) {
-               @Override
+                @Override
                 public Map<String, String> getHeaders() throws AuthFailureError {
                     Map<String, String> headers = new HashMap<>();
                     headers.put("Content-Type", "application/json");
@@ -192,6 +196,15 @@ public class AccountActivity extends AppCompatActivity {
                 queue.add(request);
             }
         });
+    }
+
+    public void loadImage() {
+        String userImage = sharedPreferences.getString("userImage", "");
+        if (!userImage.isEmpty()) {
+            imageProfile.setImageURI(Uri.parse(userImage));
+        } else {
+            //imageButtonProfile.setImageResource(R.drawable.default_profile_image); // Replace with your default image resource
+        }
     }
 
     public void footer() {
