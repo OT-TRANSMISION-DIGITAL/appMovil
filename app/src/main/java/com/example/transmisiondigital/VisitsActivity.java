@@ -228,7 +228,7 @@ public class VisitsActivity extends AppCompatActivity {
             int month = calendar.get(java.util.Calendar.MONTH);
             int day = calendar.get(java.util.Calendar.DAY_OF_MONTH);
 
-            DatePickerDialog datePickerDialog = new DatePickerDialog(VisitsActivity.this,
+            DatePickerDialog datePickerDialog = new DatePickerDialog(VisitsActivity.this, R.style.CustomDatePickerDialog,
                     (view, selectedYear, selectedMonth, selectedDay) -> {
                         // Crear un objeto Calendar para formatear la fecha
                         java.util.Calendar selectedDate = java.util.Calendar.getInstance();
@@ -240,6 +240,7 @@ public class VisitsActivity extends AppCompatActivity {
 
                         // Mostrar la fecha formateada en el botón
                         Log.d("buttonDatePicker", "formattedDate: " + formattedDate);
+                        buttonDatePicker.setText(" FECHA: " + formattedDate + " ");
 
                         // Actualizar dateFilter con el formato correcto
                         SimpleDateFormat dateFormatForInit = new SimpleDateFormat("MM-dd-yyyy", Locale.getDefault());

@@ -226,10 +226,13 @@ public class OrderActivity extends AppCompatActivity {
                     buttonSaveTechnical.setVisibility(View.GONE);
                     buttonEditProducts.setVisibility(View.GONE);
                     buttonSigned.setVisibility(View.GONE);
+                    spinnerStatus.setSelection(1);
                     estatus = "Finalizar";
                 } else if (estatus.equals("Autorizada")) {
+                    spinnerStatus.setSelection(0);
                     estatus = "Autorizar";
                 } else if (estatus.equals("Cancelada")) {
+                    spinnerStatus.setSelection(2);
                     estatus = "Cancelar";
                 }
 
@@ -259,7 +262,7 @@ public class OrderActivity extends AppCompatActivity {
                     total += cantidad * precio;
                     productsList.add(new Products(producto.getInt("id"), nombre, producto.getString("descripcion"), cantidad, precio));
                 }
-                textViewTotal.setText("Total: $" + total);
+                textViewTotal.setText("Total: $" + String.format("%.2f", total));
                 loadImage();
                 progressBar.setVisibility(View.GONE);
             } catch (JSONException e) {

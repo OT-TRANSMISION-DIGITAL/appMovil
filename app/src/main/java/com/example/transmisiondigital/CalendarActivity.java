@@ -73,7 +73,7 @@ public class CalendarActivity extends AppCompatActivity {
         spinnerSetUp();
         pickerDate();
         selectedItem = "ordenes";
-        init(dateFilter, selectedItem);
+        //init(dateFilter, selectedItem);
     }
 
     public void header() {
@@ -105,7 +105,7 @@ public class CalendarActivity extends AppCompatActivity {
             int month = calendar.get(java.util.Calendar.MONTH);
             int day = calendar.get(java.util.Calendar.DAY_OF_MONTH);
 
-            DatePickerDialog datePickerDialog = new DatePickerDialog(CalendarActivity.this,
+            DatePickerDialog datePickerDialog = new DatePickerDialog(CalendarActivity.this, R.style.CustomDatePickerDialog,
                     (view, selectedYear, selectedMonth, selectedDay) -> {
                         // Crear un objeto Calendar para formatear la fecha
                         java.util.Calendar selectedDate = java.util.Calendar.getInstance();
@@ -132,7 +132,7 @@ public class CalendarActivity extends AppCompatActivity {
 
     public void spinnerSetUp() {
         spinnerType = findViewById(R.id.spinnerType);
-        String[] items = {"Tipo: ordenes", "Tipo: visitas"};
+        String[] items = {"Tipo: Ordenes", "Tipo: Visitas"};
 
         // Create an ArrayAdapter using the string array and a default spinner layout
         adapter = new ArrayAdapter<>(this, R.layout.spinner_item, items);

@@ -95,10 +95,10 @@ public class VisitActivity extends AppCompatActivity {
         header();
         String[] items = {"Autorizar", "Finalizar", "Cancelar"};
 
-        adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, items);
+        adapter = new ArrayAdapter<>(this, R.layout.spinner_item, items);
 
 
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        adapter.setDropDownViewResource(R.layout.spinner_item_dropdown);
 
 
         spinnerStatus.setAdapter(adapter);
@@ -173,10 +173,13 @@ public class VisitActivity extends AppCompatActivity {
                 if (estatus.equals("Finalizada")) {
                     buttonSetHour.setVisibility(View.GONE);
                     buttonAttend.setVisibility(View.GONE);
+                    spinnerStatus.setSelection(1);
                     estatus = "Finalizar";
                 } else if (estatus.equals("Autorizada")) {
+                    spinnerStatus.setSelection(0);
                     estatus = "Autorizar";
                 } else if (estatus.equals("Cancelada")) {
+                    spinnerStatus.setSelection(2);
                     estatus = "Cancelar";
                 }
             } catch (JSONException e) {

@@ -43,7 +43,6 @@
             android:screenOrientation="landscape"
             android:theme="@style/Theme.TransmisionDigital"
             tools:ignore="DiscouragedApi" />
-
         <service
             android:name=".services.PusherService"
             android:exported="false" />

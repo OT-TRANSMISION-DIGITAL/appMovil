@@ -19,8 +19,8 @@
     <Button
         android:id="@+id/buttonDatePicker"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
+        android:layout_height="50dp"
+        android:layout_marginTop="3dp"
         android:background="@drawable/button_without_border"
         android:text=" Fecha : 11-08-2024 "
         android:textColor="@color/baseColor"
@@ -43,7 +43,6 @@
             android:id="@+id/spinnerType"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:textSize="15dp"
             />
 
     </FrameLayout>

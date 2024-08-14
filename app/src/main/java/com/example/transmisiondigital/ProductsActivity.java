@@ -68,7 +68,6 @@ public class ProductsActivity extends AppCompatActivity {
         fechaHoraLLegadaStr = intent.getStringExtra("fechaHoraLLegada");
         //fechaHoraLLegadaStr = (fechaHoraLLegadaStr != null && fechaHoraLLegadaStr.isEmpty()) ? null : fechaHoraLLegadaStr;
         fechaHoraSalidaStr = intent.getStringExtra("fechaHoraSalida");
-        Log.d("fechaHoraSalida", fechaHoraSalidaStr);
         //fechaHoraSalidaStr = (fechaHoraSalidaStr != null && fechaHoraSalidaStr.isEmpty()) ? null : fechaHoraSalidaStr;
         personaSolicitante = intent.getStringExtra("personaSolicitante");
         direccion = intent.getStringExtra("direccion");
@@ -148,7 +147,7 @@ public class ProductsActivity extends AppCompatActivity {
             }
 
             order.put("fechaHoraSolicitud", fechaHoraSolicitudStr != null && !fechaHoraSolicitudStr.isEmpty() ? fechaHoraSolicitudStr : JSONObject.NULL);
-            order.put("fechaHoraLlegada", fechaHoraLLegadaStr != null && !fechaHoraLLegadaStr.isEmpty() ? fechaHoraLLegadaStr : JSONObject.NULL);
+            order.put("fechaHoraLlegada", fechaHoraLLegadaStr != null && !fechaHoraLLegadaStr.isEmpty() && !"null".equals(fechaHoraLLegadaStr) ? fechaHoraLLegadaStr : JSONObject.NULL);
             order.put("fechaHoraSalida", fechaHoraSalidaStr != null && !fechaHoraSalidaStr.isEmpty() && !"null".equals(fechaHoraSalidaStr) ? fechaHoraSalidaStr : JSONObject.NULL);
             order.put("persona_solicitante", personaSolicitante);
             order.put("direccion", direccion);

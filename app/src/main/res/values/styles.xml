@@ -18,4 +18,16 @@
         <item name="cornerFamily">rounded</item>
         <item name="cornerSize">50%</item>
     </style>
+
+    <style name="CustomDatePickerDialog" parent="Theme.AppCompat.Light.Dialog">
+        <item name="colorAccent">@color/baseColor</item>
+        <item name="android:datePickerDialogTheme">@style/CustomDatePicker</item>
+    </style>
+
+    <style name="CustomDatePicker" parent="android:Widget.Material.DatePicker">
+        <item name="android:headerBackground">@color/baseColor</item>
+        <!-- Removed the private attribute 'android:headerTextColor' -->
+        <item name="android:textColorPrimary">@android:color/white</item>
+        <item name="android:calendarTextColor">@color/baseColor</item>
+    </style>
 </resources>
