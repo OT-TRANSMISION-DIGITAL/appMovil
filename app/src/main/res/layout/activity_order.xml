@@ -19,14 +19,6 @@
         android:layout_height="wrap_content"
         app:layout_constraintTop_toTopOf="parent" />
 
-        <ProgressBar
-            android:id="@+id/progressBar"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_centerInParent="true"
-            android:visibility="gone"
-            tools:ignore="MissingConstraints" />
-
     <View
         android:id="@+id/topLine"
         android:layout_width="match_parent"
@@ -198,6 +190,32 @@
             android:text="" />
 
         <TextView
+            android:id="@+id/textViewSubtotal"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="15dp"
+            android:text="Subtotal: $"
+            android:textColor="@color/black"
+            android:textSize="22dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/textViewService1" />
+
+
+        <TextView
+            android:id="@+id/textViewIva"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="15dp"
+            android:text="IVA (16%): $"
+            android:textColor="@color/black"
+            android:textSize="22dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/textViewSubtotal" />
+
+
+        <TextView
             android:id="@+id/textViewTotal"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -207,7 +225,7 @@
             android:textSize="30dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/textViewService1" />
+            app:layout_constraintTop_toBottomOf="@id/textViewIva" />
 
         <FrameLayout
             android:id="@+id/frameLayoutSpinner"
@@ -218,11 +236,11 @@
             android:layout_marginTop="20dp"
             android:background="@drawable/spinner_border"
             android:layout_marginStart="25dp">
-            <Spinner
-                android:id="@+id/spinnerStatus"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                />
+                <Spinner
+                    android:id="@+id/spinnerStatus"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    />
         </FrameLayout>
 
         <Button

@@ -30,4 +30,26 @@
         <item name="android:textColorPrimary">@android:color/white</item>
         <item name="android:calendarTextColor">@color/baseColor</item>
     </style>
+
+    <style name="CustomHourPicker" parent="Theme.AppCompat.Light.Dialog">
+        <item name="colorAccent">@color/baseColor</item>
+        <item name="android:timePickerDialogTheme">@style/CustomTimePicker</item>
+    </style>
+
+    <style name="CustomTimePicker" parent="android:Widget.Material.TimePicker">
+        <item name="android:headerBackground">@color/baseColor</item>
+        <item name="android:textColorPrimary">@android:color/white</item>
+        <item name="android:timePickerStyle">@style/CustomTimePickerStyle</item>
+    </style>
+
+    <style name="CustomTimePickerStyle" parent="android:Widget.Material.TimePicker">
+        <item name="colorPrimary">@color/baseColor</item>
+        <item name="colorOnPrimary">@android:color/white</item>
+        <item name="colorOnSurface">@color/baseColor</item>
+    </style>
+
+        <style name="CustomProgressBar" parent="Widget.AppCompat.ProgressBar">
+            <item name="android:indeterminateTint">@color/baseColor</item>
+            <item name="android:indeterminateTintMode">src_in</item>
+        </style>
 </resources>

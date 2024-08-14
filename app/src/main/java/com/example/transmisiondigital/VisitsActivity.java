@@ -34,6 +34,7 @@ import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
 import com.example.transmisiondigital.adapters.OrderAdapter;
 import com.example.transmisiondigital.adapters.VisitAdapter;
+import com.example.transmisiondigital.drawing.LoadingDialog;
 import com.example.transmisiondigital.includes.footerActivity;
 import com.example.transmisiondigital.models.Orders;
 import com.example.transmisiondigital.models.Visits;
@@ -60,19 +61,22 @@ public class VisitsActivity extends AppCompatActivity {
     public String selectedItem;
     private Button buttonDatePicker;
     private String dateFilter;
+    private LoadingDialog loadingDialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_visits);
         sharedPreferences = getSharedPreferences("sessionUser", Context.MODE_PRIVATE);
+        loadingDialog = new LoadingDialog(VisitsActivity.this);
         header();
         filters();
-        init(dateFilter, selectedItem);
+        //init(dateFilter, selectedItem);
         footer();
     }
 
     public void header() {
+        loadingDialog.show();
         SharedPreferences sharedPreferences = getSharedPreferences("sessionUser", Context.MODE_PRIVATE);
         TextView textViewName = findViewById(R.id.textViewName);
         String userName = sharedPreferences.getString("userName", "");
@@ -87,9 +91,11 @@ public class VisitsActivity extends AppCompatActivity {
         } else {
             //imageButtonProfile.setImageResource(R.drawable.default_profile_image); // Replace with your default image resource
         }
+        loadingDialog.hide();
     }
 
     public void init(String dateFilter, String type) {
+        loadingDialog.show();
         List<Visits> visitsList = new ArrayList<>();
 
         String queryParams = null;
@@ -177,6 +183,7 @@ public class VisitsActivity extends AppCompatActivity {
         // Añadir la petición a la cola de solicitudes
         RequestQueue queue = Volley.newRequestQueue(VisitsActivity.this);
         queue.add(jsonObjectRequest);
+        loadingDialog.hide();
     }
 
     public void filters() {

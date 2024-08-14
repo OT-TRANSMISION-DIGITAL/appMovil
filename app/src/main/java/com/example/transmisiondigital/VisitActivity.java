@@ -14,6 +14,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.FrameLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -31,6 +32,7 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
+import com.example.transmisiondigital.drawing.LoadingDialog;
 import com.google.android.material.imageview.ShapeableImageView;
 
 import org.json.JSONArray;
@@ -46,7 +48,7 @@ import java.util.Iterator;
 import java.util.Locale;
 
 public class VisitActivity extends AppCompatActivity {
-
+    private LoadingDialog loadingDialog;
     private String idVisit, horaLlegada, fechaHoraSolicitudStr, motivo, direccion, tecnicoId, clienteId, sucursalId;
     private SharedPreferences sharedPreferences;
     private TextView textViewFolio, textViewDate, textViewHour, textViewAddress, textViewCustomer, textViewReason;
@@ -54,6 +56,7 @@ public class VisitActivity extends AppCompatActivity {
     private Button buttonSave, buttonAttend, buttonSetHour;
     private Spinner spinnerStatus;
     private ArrayAdapter<String> adapter;
+    private FrameLayout frameLayoutSpinner;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -62,6 +65,7 @@ public class VisitActivity extends AppCompatActivity {
         TextView textViewTitle = findViewById(R.id.textViewTitle);
         textViewTitle.setText("VISITAS");
         Intent intent = getIntent();
+        loadingDialog = new LoadingDialog(VisitActivity.this);
         idVisit = intent.getStringExtra("idVisit");
         sharedPreferences = getSharedPreferences("sessionUser", Context.MODE_PRIVATE);
         footer();
@@ -84,12 +88,14 @@ public class VisitActivity extends AppCompatActivity {
         spinnerStatus = findViewById(R.id.spinnerStatus);
         buttonAttend = findViewById(R.id.buttonAttend);
         buttonSetHour = findViewById(R.id.buttonSetHour);
+        frameLayoutSpinner = findViewById(R.id.frameLayoutSpinner);
 
         if (sharedPreferences.getString("rol", null).equals("Técnico")) {
             spinnerStatus.setVisibility(View.GONE);
             buttonSave.setVisibility(View.GONE);
             buttonAttend.setVisibility(View.VISIBLE);
             buttonSetHour.setVisibility(View.VISIBLE);
+            frameLayoutSpinner.setVisibility(View.GONE);
         }
 
         header();
@@ -123,6 +129,7 @@ public class VisitActivity extends AppCompatActivity {
     }
 
     public void requestApi() {
+        loadingDialog.show();
         JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET, URL + "visitas/" + idVisit, null, response -> {
             try {
                 // Obtener el objeto JSON de la respuesta
@@ -198,10 +205,12 @@ public class VisitActivity extends AppCompatActivity {
 
         RequestQueue requestQueue = Volley.newRequestQueue(VisitActivity.this);
         requestQueue.add(jsonObjectRequest);
+        loadingDialog.hide();
     }
 
     public void buttonSave() {
         buttonSave.setOnClickListener(v -> {
+            loadingDialog.show();
             String status = spinnerStatus.getSelectedItem().toString();
             String apiEstatus = "";
             JSONObject jsonObject = new JSONObject();
@@ -218,6 +227,7 @@ public class VisitActivity extends AppCompatActivity {
                     Toast.makeText(VisitActivity.this, message, Toast.LENGTH_SHORT).show();
                     // Create a Handler to introduce a delay
                     Handler handler = new Handler(Looper.getMainLooper());
+                    loadingDialog.hide();
 
                     // Post a Runnable with a delay of 2 seconds (2000 milliseconds)
                     handler.postDelayed(new Runnable() {
@@ -231,6 +241,7 @@ public class VisitActivity extends AppCompatActivity {
                 }
             }, error -> {
                 try {
+                    loadingDialog.hide();
                     String responseBody = new String(error.networkResponse.data, "utf-8");
                     JSONObject data = new JSONObject(responseBody);
                     String message = data.getString("msg");
@@ -265,10 +276,13 @@ public class VisitActivity extends AppCompatActivity {
                 return;
             }
 
+            loadingDialog.show();
             JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.PATCH, URL + "visitas/finalizar/" + idVisit, null, response -> {
+                loadingDialog.hide();
                 requestApiupdate();
             }, error -> {
                 try {
+                    loadingDialog.hide();
                     String responseBody = new String(error.networkResponse.data, "utf-8");
                     JSONObject data = new JSONObject(responseBody);
                     String message = data.getString("msg");
@@ -311,6 +325,7 @@ public class VisitActivity extends AppCompatActivity {
     }
 
     public void requestApiupdate() {
+        loadingDialog.show();
         Calendar calendar = Calendar.getInstance();
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
         String currentDate = dateFormat.format(calendar.getTime());
@@ -332,6 +347,7 @@ public class VisitActivity extends AppCompatActivity {
             jsonObject.put("fechaHoraLlegada", horaLlegada);
             jsonObject.put("fechaHoraSalida", fechaHoraSalida);
         } catch (JSONException e) {
+            loadingDialog.hide();
             throw new RuntimeException(e);
         }
         JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.PUT, URL + "visitas/" + idVisit, jsonObject, new Response.Listener<JSONObject>() {
@@ -339,6 +355,7 @@ public class VisitActivity extends AppCompatActivity {
             public void onResponse(JSONObject response) {
                 String message = null;
                 try {
+                    loadingDialog.hide();
                     message = response.getString("msg");
                     Toast.makeText(VisitActivity.this, message, Toast.LENGTH_SHORT).show();
                     Intent intent = new Intent(VisitActivity.this, VisitsActivity.class);
@@ -352,6 +369,7 @@ public class VisitActivity extends AppCompatActivity {
             @Override
             public void onErrorResponse(VolleyError error) {
                 try {
+                    loadingDialog.hide();
                     Log.e("Error", "onErrorResponse: " + error);
                     String responseBody = new String(error.networkResponse.data, "utf-8");
                     JSONObject data = new JSONObject(responseBody);
@@ -409,7 +427,6 @@ public class VisitActivity extends AppCompatActivity {
         }
 
         btnVisits.setOnClickListener(v -> {
-            Log.d("footerActivity", "onClick: VisitsActivity");
             Intent intent = new Intent(this, VisitsActivity.class);
             //intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
             startActivity(intent);
@@ -417,7 +434,6 @@ public class VisitActivity extends AppCompatActivity {
         });
 
         btnOrder.setOnClickListener(v -> {
-            Log.d("footerActivity", "onClick: OrdersActivity");
             Intent intent = new Intent(this, OrdersActivity.class);
             //intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
             startActivity(intent);
@@ -425,7 +441,10 @@ public class VisitActivity extends AppCompatActivity {
         });
 
         btnCalendar.setOnClickListener(v -> {
-
+            Intent intent = new Intent(this, CalendarActivity.class);
+            //intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+            startActivity(intent);
+            finish();
         });
 
         BtnAccount.setOnClickListener(v -> {

@@ -33,6 +33,7 @@ import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
 import com.example.transmisiondigital.adapters.OrderAdapter;
+import com.example.transmisiondigital.drawing.LoadingDialog;
 import com.example.transmisiondigital.globalVariables.Conexion;
 import com.example.transmisiondigital.includes.footerActivity;
 import com.example.transmisiondigital.models.Orders;
@@ -59,12 +60,14 @@ public class OrdersActivity extends AppCompatActivity {
     private Button buttonDatePicker;
     private ArrayAdapter<String> adapter;
     private Spinner spinnerType;
+    private LoadingDialog loadingDialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_orders);
         sharedPreferences = getSharedPreferences("sessionUser", Context.MODE_PRIVATE);
+        loadingDialog = new LoadingDialog(OrdersActivity.this);
         header();
         filters();
         //init(dateFilter, selectedItem);
@@ -72,6 +75,7 @@ public class OrdersActivity extends AppCompatActivity {
     }
 
     public void header() {
+        loadingDialog.show();
         TextView textViewName = findViewById(R.id.textViewName);
         String userName = sharedPreferences.getString("userName", "");
         textViewName.setText(userName);
@@ -83,9 +87,11 @@ public class OrdersActivity extends AppCompatActivity {
         } else {
             //imageButtonProfile.setImageResource(R.drawable.default_profile_image); // Replace with your default image resource
         }
+        loadingDialog.hide();
     }
 
     public void init(String dateFilter, String type) {
+        loadingDialog.show();
         ordersList = new ArrayList<>();
 
         String queryParams = null;
@@ -170,7 +176,7 @@ public class OrdersActivity extends AppCompatActivity {
         // Añadir la petición a la cola de solicitudes
         RequestQueue queue = Volley.newRequestQueue(OrdersActivity.this);
         queue.add(jsonObjectRequest);
-
+        loadingDialog.hide();
     }
 
     public void spinnerSetUp() {

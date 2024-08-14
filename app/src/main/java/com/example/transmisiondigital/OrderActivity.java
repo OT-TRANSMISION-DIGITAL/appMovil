@@ -3,7 +3,6 @@ package com.example.transmisiondigital;
 import static com.example.transmisiondigital.globalVariables.Conexion.URL;
 
 import android.Manifest;
-import android.app.ProgressDialog;
 import android.app.TimePickerDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.content.Context;
@@ -16,30 +15,22 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
-import android.os.Handler;
-import android.os.Looper;
-import android.util.Base64;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.ProgressBar;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
@@ -53,7 +44,7 @@ import com.dantsu.escposprinter.exceptions.EscPosConnectionException;
 import com.dantsu.escposprinter.exceptions.EscPosEncodingException;
 import com.dantsu.escposprinter.exceptions.EscPosParserException;
 import com.dantsu.escposprinter.textparser.PrinterTextParserImg;
-import com.example.transmisiondigital.models.Orders;
+import com.example.transmisiondigital.drawing.LoadingDialog;
 import com.example.transmisiondigital.models.Products;
 import com.example.transmisiondigital.request.MultipartRequest;
 import com.google.android.material.imageview.ShapeableImageView;
@@ -63,10 +54,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -79,10 +67,10 @@ import java.util.Locale;
 
 public class OrderActivity extends AppCompatActivity {
 
-    private String idOrder, sucursalName, firmaUrl, clienteNombre, tecnicoNombre, fechaHoraSolicitudStr, fechaHoraLLegadaStr, fechaHoraSalidaStr, personaSolicitante, direccion, puesto, horaLlegada;
+    private String idOrder, sucursalName, firmaUrl, clienteNombre, tecnicoNombre, fechaHoraSolicitudStr, fechaHoraLLegadaStr, fechaHoraSalidaStr, personaSolicitante, direccion, puesto, horaLlegada, soloHora;
     private int clienteId, sucursalId;
     private SharedPreferences sharedPreferences;
-    private TextView textViewFolio, textViewDate, textViewHour, textViewAddress, textViewCustomer;
+    private TextView textViewFolio, textViewDate, textViewHour, textViewAddress, textViewCustomer, textViewIva, textViewSubtotal;
     private LinearLayout container;
     private TextView textViewTechnical, textViewApplicant, textViewPosition, textViewStatus, textViewEntryTime, textViewDepartureTime, textViewTotal;
     private Spinner spinnerStatus;
@@ -93,8 +81,9 @@ public class OrderActivity extends AppCompatActivity {
     private static final int REQUEST_BLUETOOTH_PERMISSIONS = 2;
     private BluetoothAdapter bluetoothAdapter;
     private JSONArray detallesArray;
-    private ProgressBar progressBar;
     private List<Products> productsList;
+    private FrameLayout frameLayoutSpinner;
+    private LoadingDialog loadingDialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -102,6 +91,7 @@ public class OrderActivity extends AppCompatActivity {
         setContentView(R.layout.activity_order);
         sharedPreferences = getSharedPreferences("sessionUser", Context.MODE_PRIVATE);
         Intent intent = getIntent();
+        loadingDialog = new LoadingDialog(this);
         idOrder = intent.getStringExtra("idOrder");
         textViewFolio = findViewById(R.id.textViewFolio);
         textViewDate = findViewById(R.id.textViewDate);
@@ -123,9 +113,10 @@ public class OrderActivity extends AppCompatActivity {
         imageViewSignature = findViewById(R.id.imageViewSignature);
         buttonSaveTechnical = findViewById(R.id.buttonSaveTechnical);
         buttonEditProducts = findViewById(R.id.buttonEditProducts);
-        progressBar = findViewById(R.id.progressBar);
-        progressBar.setVisibility(View.GONE);
+        frameLayoutSpinner = findViewById(R.id.frameLayoutSpinner);
         buttonSetHour = findViewById(R.id.buttonSetHour);
+        textViewIva = findViewById(R.id.textViewIva);
+        textViewSubtotal = findViewById(R.id.textViewSubtotal);
 
         if (sharedPreferences.getString("rol", null).equals("Técnico")) {
             spinnerStatus.setVisibility(View.GONE);
@@ -135,6 +126,7 @@ public class OrderActivity extends AppCompatActivity {
             buttonSaveTechnical.setVisibility(View.VISIBLE);
             buttonEditProducts.setVisibility(View.VISIBLE);
             buttonSetHour.setVisibility(View.VISIBLE);
+            frameLayoutSpinner.setVisibility(View.GONE);
         }
         header();
         setUpSpinner();
@@ -163,6 +155,7 @@ public class OrderActivity extends AppCompatActivity {
     }
 
     public void init() {
+        loadingDialog.show();
         productsList = new ArrayList<>();
         JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET, URL + "ordenes/" + idOrder, null, response -> {
             try {
@@ -201,7 +194,7 @@ public class OrderActivity extends AppCompatActivity {
 
                 // Formatear a strings de fecha y hora
                 String soloFecha = formatoFecha.format(fechaHoraSolicitud);
-                String soloHora = formatoHora.format(fechaHoraSolicitud);
+                soloHora = formatoHora.format(fechaHoraSolicitud);
                 String horaLLegada = (fechaHoraLLegada != null) ? formatoHora.format(fechaHoraLLegada) : "";
                 String horaSalida = (fechaHoraSalida != null) ? formatoHora.format(fechaHoraSalida) : "";
                 String estatus = data.getString("estatus");
@@ -239,7 +232,7 @@ public class OrderActivity extends AppCompatActivity {
                 int defaultPosition = adapter.getPosition(estatus);
                 spinnerStatus.setSelection(defaultPosition);
 
-                double total = 0.0;
+                double subtotal = 0.0;
                 for (int i = 0; i < detallesArray.length(); i++) {
                     JSONObject detalle = detallesArray.getJSONObject(i);
 
@@ -250,21 +243,26 @@ public class OrderActivity extends AppCompatActivity {
                     String nombre = producto.getString("nombre");
                     int cantidad = detalle.getInt("cantidad");
                     double precio = producto.getDouble("precio");
+                    double subTotalPrecio = cantidad * precio;
 
                     TextView textView = new TextView(this);
-                    textView.setText((i + 1) + ".- " + nombre + " x" + cantidad + " $" + precio);
+                    textView.setText((i + 1) + ".- " + nombre + "  $" + precio + "\nx" + cantidad + "  $" + subTotalPrecio);
                     textView.setTextSize(18);
                     textView.setPadding(16, 16, 16, 16);
 
                     // Agregar el TextView al contenedor
                     container.addView(textView);
                     // Agrega el nombre a la lista
-                    total += cantidad * precio;
+                    subtotal += subTotalPrecio;
                     productsList.add(new Products(producto.getInt("id"), nombre, producto.getString("descripcion"), cantidad, precio));
                 }
+                double iva = subtotal * 0.16;
+                double total = subtotal + iva;
+                textViewSubtotal.setText("Subtotal: $" + String.format("%.2f", subtotal));
+                textViewIva.setText("IVA (16%): $" + String.format("%.2f", iva));
                 textViewTotal.setText("Total: $" + String.format("%.2f", total));
                 loadImage();
-                progressBar.setVisibility(View.GONE);
+                loadingDialog.hide();
             } catch (JSONException e) {
                 e.printStackTrace();
             } catch (ParseException e) {
@@ -272,10 +270,10 @@ public class OrderActivity extends AppCompatActivity {
             }
         }, error -> {
             try {
+                loadingDialog.hide();
                 String responseBody = new String(error.networkResponse.data, "utf-8");
                 JSONObject data = new JSONObject(responseBody);
                 String message = data.getString("message");
-                progressBar.setVisibility(View.GONE);
                 Toast.makeText(OrderActivity.this, message, Toast.LENGTH_SHORT).show();
             } catch (UnsupportedEncodingException | JSONException e) {
                 e.printStackTrace();
@@ -303,6 +301,7 @@ public class OrderActivity extends AppCompatActivity {
 
     public void buttonSave() {
         buttonSave.setOnClickListener(v -> {
+            loadingDialog.show();
             String status = spinnerStatus.getSelectedItem().toString();
             String apiEstatus = "";
             JSONObject jsonObject = new JSONObject();
@@ -315,6 +314,7 @@ public class OrderActivity extends AppCompatActivity {
             }
             JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.PATCH, URL + "ordenes/" + apiEstatus + idOrder, jsonObject, response -> {
                 try {
+                    loadingDialog.hide();
                     String message = response.getString("msg");
                     Toast.makeText(OrderActivity.this, message, Toast.LENGTH_SHORT).show();
                 } catch (JSONException e) {
@@ -322,6 +322,7 @@ public class OrderActivity extends AppCompatActivity {
                 }
             }, error -> {
                 try {
+                    loadingDialog.hide();
                     String responseBody = new String(error.networkResponse.data, "utf-8");
                     JSONObject data = new JSONObject(responseBody);
                     String message = data.getString("message");
@@ -340,13 +341,12 @@ public class OrderActivity extends AppCompatActivity {
         buttonSigned.setOnClickListener(v -> {
             Intent intent = new Intent(this, SignatureActivity.class);
             intent.putExtra("idOrder", idOrder);
-            Log.i("idOrder", "idOrder: " + idOrder);
             startActivity(intent);
         });
     }
 
     public void loadImage() {
-        Log.i("ImageView", "firma: " + firmaUrl);
+        loadingDialog.show();
         if (firmaUrl != null && !firmaUrl.isEmpty()) {
             // Make a network request to fetch the image
             ImageRequest imageRequest = new ImageRequest(firmaUrl, response -> {
@@ -356,7 +356,7 @@ public class OrderActivity extends AppCompatActivity {
             }, 0, 0, ImageView.ScaleType.CENTER_CROP, Bitmap.Config.RGB_565, error -> {
                 Log.e("ImageView", "Error fetching image: " + error.getMessage());
             });
-
+            loadingDialog.hide();
             RequestQueue requestQueue = Volley.newRequestQueue(OrderActivity.this);
             requestQueue.add(imageRequest);
             return;
@@ -372,19 +372,18 @@ public class OrderActivity extends AppCompatActivity {
             Log.i("ImageView", "Image file does not exist: " + imageFile.getAbsolutePath());
             imageViewSignature.setVisibility(View.GONE);
         }
+        loadingDialog.hide();
     }
 
     public void loadImageOnResume() {
+        loadingDialog.show();
         // Path to the image file
         File imageFile = new File(getExternalFilesDir(Environment.DIRECTORY_PICTURES), "signatureOrder_" + idOrder + ".png");
 
         if (imageFile.exists()) {
-            Log.i("ImageView", "Image file exists: " + imageFile.getAbsolutePath());
             imageViewSignature.setImageBitmap(BitmapFactory.decodeFile(imageFile.getAbsolutePath()));
             imageViewSignature.setScaleType(ImageView.ScaleType.CENTER_CROP); // Adjust the image to fit the ImageView
         } else {
-            //Log.i("ImageView", "Image file does not exist: " + imageFile.getAbsolutePath());
-            //imageViewSignature.setVisibility(View.GONE);
             if (firmaUrl != null && !firmaUrl.isEmpty()) {
                 // Make a network request to fetch the image
                 ImageRequest imageRequest = new ImageRequest(firmaUrl, response -> {
@@ -399,6 +398,7 @@ public class OrderActivity extends AppCompatActivity {
                 requestQueue.add(imageRequest);
             }
         }
+        loadingDialog.hide();
     }
 
     public void buttonSaveTechnical() {
@@ -422,6 +422,8 @@ public class OrderActivity extends AppCompatActivity {
                     Toast.makeText(OrderActivity.this, "Debe seleccionar una hora de llegada", Toast.LENGTH_SHORT).show();
                     return;
                 }
+
+                loadingDialog.show();
                 // Path to the image file
                 File imageFile = new File(getExternalFilesDir(Environment.DIRECTORY_PICTURES), "signatureOrder_" + idOrder + ".png");
 
@@ -437,12 +439,11 @@ public class OrderActivity extends AppCompatActivity {
                             for (int i = 0; i < firmaErrors.length(); i++) {
                                 Log.i("ImagenPeticion", "Error: " + firmaErrors.getString(i));
                             }
-                            progressBar.setVisibility(View.GONE);
+                            //progressBar.setVisibility(View.GONE);
                         } catch (UnsupportedEncodingException | JSONException e) {
                             e.printStackTrace();
                         }
                     }, response -> {
-                        progressBar.setVisibility(View.GONE);
                         try {
                             String responseBody = new String(response.data, "utf-8");
                             Log.i("ImagenPeticion", "Response: " + responseBody);
@@ -459,11 +460,11 @@ public class OrderActivity extends AppCompatActivity {
                     RequestQueue requestQueue = Volley.newRequestQueue(OrderActivity.this);
                     requestQueue.add(multipartRequest);
                 } else {
-                    progressBar.setVisibility(View.GONE);
+                    //progressBar.setVisibility(View.GONE);
                     Log.i("ImageView", "Image file does not exist: " + imageFile.getAbsolutePath());
                 }
 
-                progressBar.setVisibility(View.VISIBLE);
+                //progressBar.setVisibility(View.VISIBLE);
                 JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.PATCH, URL + "ordenes/finalizar/" + idOrder, null, response -> {
                     try {
                         String message = response.getString("msg");
@@ -474,7 +475,7 @@ public class OrderActivity extends AppCompatActivity {
                         e.printStackTrace();
                     }
                 }, error -> {
-                    progressBar.setVisibility(View.GONE);
+                    //progressBar.setVisibility(View.GONE);
                     if (error.networkResponse != null) {
                         try {
                             String responseBody = new String(error.networkResponse.data, "utf-8");
@@ -491,6 +492,7 @@ public class OrderActivity extends AppCompatActivity {
 
                 RequestQueue requestQueue = Volley.newRequestQueue(OrderActivity.this);
                 requestQueue.add(jsonObjectRequest);
+                loadingDialog.hide();
             }
         });
     }
@@ -521,18 +523,23 @@ public class OrderActivity extends AppCompatActivity {
                 int currentHour = calendar.get(Calendar.HOUR_OF_DAY);
                 int currentMinute = calendar.get(Calendar.MINUTE);
 
-                // Subtract one hour from the current time
-                calendar.add(Calendar.HOUR_OF_DAY, -1);
-                int defaultHour = calendar.get(Calendar.HOUR_OF_DAY);
-                int defaultMinute = calendar.get(Calendar.MINUTE);
+                // Parse the soloHora string to extract hour and minute
+                String[] timeParts = soloHora.split(":");
+                int limitHour = Integer.parseInt(timeParts[0]);
+                int limitMinute = Integer.parseInt(timeParts[1]);
 
-                // Open a time picker dialog with the default time set to one hour less than the current time
-                TimePickerDialog timePickerDialog = new TimePickerDialog(OrderActivity.this, (view, hourOfDay, minute) -> {
-                    // Set the selected time to the textViewHour
-                    String selectedTime = String.format(Locale.getDefault(), "%02d:%02d", hourOfDay, minute);
-                    Log.d("HourSelected", "onClick: " + selectedTime);
-                    textViewEntryTime.setText("Hora de llegada: " + selectedTime);
-                }, defaultHour, defaultMinute, true);
+                // Open a time picker dialog with the default time set to the current time
+                TimePickerDialog timePickerDialog = new TimePickerDialog(OrderActivity.this, R.style.CustomHourPicker, (view, hourOfDay, minute) -> {
+                    // Check if the selected time is before the limit or after the current time
+                    if (hourOfDay < limitHour || (hourOfDay == limitHour && minute < limitMinute) || hourOfDay > currentHour || (hourOfDay == currentHour && minute > currentMinute)) {
+                        Toast.makeText(OrderActivity.this, "No se puede elegir una hora antes de las " + String.format(Locale.getDefault(), "%02d:%02d", limitHour, limitMinute) + " o después de la hora actual", Toast.LENGTH_SHORT).show();
+                    } else {
+                        // Set the selected time to the textViewHour
+                        String selectedTime = String.format(Locale.getDefault(), "%02d:%02d", hourOfDay, minute);
+                        Log.d("HourSelected", "onClick: " + selectedTime);
+                        textViewEntryTime.setText("Hora de llegada: " + selectedTime + ":00");
+                    }
+                }, currentHour, currentMinute, true);
 
                 timePickerDialog.show();
             }
@@ -540,12 +547,13 @@ public class OrderActivity extends AppCompatActivity {
     }
 
     public void updateEntryTime() {
+        loadingDialog.show();
         Calendar calendar = Calendar.getInstance();
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
         String currentDate = dateFormat.format(calendar.getTime());
 
         // Combine current date with horaLlegada and add seconds as 00
-        String formattedDateTime = currentDate + " " + horaLlegada + ":00";
+        String formattedDateTime = currentDate + " " + horaLlegada;
         horaLlegada = formattedDateTime;
 
         SimpleDateFormat dateTimeFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
@@ -553,7 +561,7 @@ public class OrderActivity extends AppCompatActivity {
         JSONObject order = new JSONObject();
         try {
             order.put("fechaHoraSolicitud", fechaHoraSolicitudStr != null && !fechaHoraSolicitudStr.isEmpty() ? fechaHoraSolicitudStr : JSONObject.NULL);
-            order.put("fechaHoraLlegada", horaLlegada );
+            order.put("fechaHoraLlegada", horaLlegada);
             order.put("fechaHoraSalida", fechaHoraSalida);
             order.put("persona_solicitante", personaSolicitante);
             order.put("direccion", direccion);
@@ -585,6 +593,7 @@ public class OrderActivity extends AppCompatActivity {
         }
         JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.PUT, URL + "ordenes/" + idOrder, order, response -> {
             try {
+                loadingDialog.hide();
                 String msg = response.getString("msg");
                 Snackbar.make(findViewById(android.R.id.content), msg, Snackbar.LENGTH_LONG).show();
                 Intent intent = new Intent(OrderActivity.this, OrdersActivity.class);
@@ -612,6 +621,7 @@ public class OrderActivity extends AppCompatActivity {
 
         RequestQueue requestQueue = Volley.newRequestQueue(this);
         requestQueue.add(jsonObjectRequest);
+        loadingDialog.hide();
     }
 
     public void buttonPrint() {
@@ -676,6 +686,7 @@ public class OrderActivity extends AppCompatActivity {
 
                 // Agrega la información del producto al texto de impresión
                 printText.append("[L]<b>").append(nombre).append("</b>[R]").append(String.format("%.2f", precio)).append("\n")
+                        .append("[L]\n")
                         .append("[L]  x").append(cantidad).append("[R]").append(String.format("%.2f", subtotal)).append("\n")
                         .append("[L]\n");
 
