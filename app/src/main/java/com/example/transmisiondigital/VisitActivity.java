@@ -2,6 +2,7 @@ package com.example.transmisiondigital;
 
 import static com.example.transmisiondigital.globalVariables.Conexion.URL;
 
+import android.app.ProgressDialog;
 import android.app.TimePickerDialog;
 import android.content.Context;
 import android.content.Intent;
@@ -48,7 +49,6 @@ import java.util.Iterator;
 import java.util.Locale;
 
 public class VisitActivity extends AppCompatActivity {
-    private LoadingDialog loadingDialog;
     private String idVisit, horaLlegada, fechaHoraSolicitudStr, motivo, direccion, tecnicoId, clienteId, sucursalId;
     private SharedPreferences sharedPreferences;
     private TextView textViewFolio, textViewDate, textViewHour, textViewAddress, textViewCustomer, textViewReason;
@@ -57,6 +57,7 @@ public class VisitActivity extends AppCompatActivity {
     private Spinner spinnerStatus;
     private ArrayAdapter<String> adapter;
     private FrameLayout frameLayoutSpinner;
+    private ProgressDialog progressDialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -65,7 +66,6 @@ public class VisitActivity extends AppCompatActivity {
         TextView textViewTitle = findViewById(R.id.textViewTitle);
         textViewTitle.setText("VISITAS");
         Intent intent = getIntent();
-        loadingDialog = new LoadingDialog(VisitActivity.this);
         idVisit = intent.getStringExtra("idVisit");
         sharedPreferences = getSharedPreferences("sessionUser", Context.MODE_PRIVATE);
         footer();
@@ -89,6 +89,8 @@ public class VisitActivity extends AppCompatActivity {
         buttonAttend = findViewById(R.id.buttonAttend);
         buttonSetHour = findViewById(R.id.buttonSetHour);
         frameLayoutSpinner = findViewById(R.id.frameLayoutSpinner);
+        progressDialog = new ProgressDialog(VisitActivity.this);
+        progressDialog.setMessage("Cargando...");
 
         if (sharedPreferences.getString("rol", null).equals("Técnico")) {
             spinnerStatus.setVisibility(View.GONE);
@@ -129,7 +131,7 @@ public class VisitActivity extends AppCompatActivity {
     }
 
     public void requestApi() {
-        loadingDialog.show();
+        progressDialog.show();
         JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET, URL + "visitas/" + idVisit, null, response -> {
             try {
                 // Obtener el objeto JSON de la respuesta
@@ -160,6 +162,13 @@ public class VisitActivity extends AppCompatActivity {
                 String fechaSolicitud = (fechaHoraSolicitud != null) ? formatoFecha.format(fechaHoraSolicitud) : "";
                 String horaSolicitud = (fechaHoraSolicitud != null) ? formatoHora.format(fechaHoraSolicitud) : "";
                 String horaLlegada = (fechaHoraLlegada != null) ? formatoHora.format(fechaHoraLlegada) : "";
+                Date fechaActual = new Date();
+                if (fechaHoraSolicitud.after(fechaActual)) {
+                    // Mostrar mensaje si la fecha de solicitud es mayor que la fecha actual
+                    buttonAttend.setVisibility(View.GONE);
+                    buttonSetHour.setVisibility(View.GONE);
+
+                }
                 motivo = data.optString("motivo", "");
                 direccion = data.optString("direccion", "");
                 tecnicoId = data.optString("tecnico_id", "");
@@ -189,11 +198,14 @@ public class VisitActivity extends AppCompatActivity {
                     spinnerStatus.setSelection(2);
                     estatus = "Cancelar";
                 }
+
+                progressDialog.dismiss();
             } catch (JSONException e) {
                 e.printStackTrace();
             }
         }, error -> {
             try {
+                progressDialog.dismiss();
                 String responseBody = new String(error.networkResponse.data, "utf-8");
                 JSONObject data = new JSONObject(responseBody);
                 String message = data.getString("message");
@@ -205,12 +217,11 @@ public class VisitActivity extends AppCompatActivity {
 
         RequestQueue requestQueue = Volley.newRequestQueue(VisitActivity.this);
         requestQueue.add(jsonObjectRequest);
-        loadingDialog.hide();
     }
 
     public void buttonSave() {
         buttonSave.setOnClickListener(v -> {
-            loadingDialog.show();
+            progressDialog.show();
             String status = spinnerStatus.getSelectedItem().toString();
             String apiEstatus = "";
             JSONObject jsonObject = new JSONObject();
@@ -227,7 +238,7 @@ public class VisitActivity extends AppCompatActivity {
                     Toast.makeText(VisitActivity.this, message, Toast.LENGTH_SHORT).show();
                     // Create a Handler to introduce a delay
                     Handler handler = new Handler(Looper.getMainLooper());
-                    loadingDialog.hide();
+                    progressDialog.dismiss();
 
                     // Post a Runnable with a delay of 2 seconds (2000 milliseconds)
                     handler.postDelayed(new Runnable() {
@@ -241,7 +252,7 @@ public class VisitActivity extends AppCompatActivity {
                 }
             }, error -> {
                 try {
-                    loadingDialog.hide();
+                    progressDialog.dismiss();
                     String responseBody = new String(error.networkResponse.data, "utf-8");
                     JSONObject data = new JSONObject(responseBody);
                     String message = data.getString("msg");
@@ -276,13 +287,13 @@ public class VisitActivity extends AppCompatActivity {
                 return;
             }
 
-            loadingDialog.show();
+            progressDialog.show();
             JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.PATCH, URL + "visitas/finalizar/" + idVisit, null, response -> {
-                loadingDialog.hide();
+                progressDialog.dismiss();
                 requestApiupdate();
             }, error -> {
                 try {
-                    loadingDialog.hide();
+                    progressDialog.dismiss();
                     String responseBody = new String(error.networkResponse.data, "utf-8");
                     JSONObject data = new JSONObject(responseBody);
                     String message = data.getString("msg");
@@ -325,7 +336,7 @@ public class VisitActivity extends AppCompatActivity {
     }
 
     public void requestApiupdate() {
-        loadingDialog.show();
+        progressDialog.show();
         Calendar calendar = Calendar.getInstance();
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
         String currentDate = dateFormat.format(calendar.getTime());
@@ -347,7 +358,6 @@ public class VisitActivity extends AppCompatActivity {
             jsonObject.put("fechaHoraLlegada", horaLlegada);
             jsonObject.put("fechaHoraSalida", fechaHoraSalida);
         } catch (JSONException e) {
-            loadingDialog.hide();
             throw new RuntimeException(e);
         }
         JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.PUT, URL + "visitas/" + idVisit, jsonObject, new Response.Listener<JSONObject>() {
@@ -355,7 +365,7 @@ public class VisitActivity extends AppCompatActivity {
             public void onResponse(JSONObject response) {
                 String message = null;
                 try {
-                    loadingDialog.hide();
+                    progressDialog.dismiss();
                     message = response.getString("msg");
                     Toast.makeText(VisitActivity.this, message, Toast.LENGTH_SHORT).show();
                     Intent intent = new Intent(VisitActivity.this, VisitsActivity.class);
@@ -369,7 +379,7 @@ public class VisitActivity extends AppCompatActivity {
             @Override
             public void onErrorResponse(VolleyError error) {
                 try {
-                    loadingDialog.hide();
+                    progressDialog.dismiss();
                     Log.e("Error", "onErrorResponse: " + error);
                     String responseBody = new String(error.networkResponse.data, "utf-8");
                     JSONObject data = new JSONObject(responseBody);

@@ -3,6 +3,7 @@ package com.example.transmisiondigital;
 import static com.example.transmisiondigital.globalVariables.Conexion.URL;
 
 import android.app.DatePickerDialog;
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -61,14 +62,15 @@ public class VisitsActivity extends AppCompatActivity {
     public String selectedItem;
     private Button buttonDatePicker;
     private String dateFilter;
-    private LoadingDialog loadingDialog;
+    private ProgressDialog progressDialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_visits);
         sharedPreferences = getSharedPreferences("sessionUser", Context.MODE_PRIVATE);
-        loadingDialog = new LoadingDialog(VisitsActivity.this);
+        progressDialog = new ProgressDialog(VisitsActivity.this);
+        progressDialog.setMessage("Cargando...");
         header();
         filters();
         //init(dateFilter, selectedItem);
@@ -76,7 +78,6 @@ public class VisitsActivity extends AppCompatActivity {
     }
 
     public void header() {
-        loadingDialog.show();
         SharedPreferences sharedPreferences = getSharedPreferences("sessionUser", Context.MODE_PRIVATE);
         TextView textViewName = findViewById(R.id.textViewName);
         String userName = sharedPreferences.getString("userName", "");
@@ -91,11 +92,10 @@ public class VisitsActivity extends AppCompatActivity {
         } else {
             //imageButtonProfile.setImageResource(R.drawable.default_profile_image); // Replace with your default image resource
         }
-        loadingDialog.hide();
     }
 
     public void init(String dateFilter, String type) {
-        loadingDialog.show();
+        progressDialog.show();
         List<Visits> visitsList = new ArrayList<>();
 
         String queryParams = null;
@@ -116,7 +116,6 @@ public class VisitsActivity extends AppCompatActivity {
             throw new RuntimeException(e);
         }
         String finalURL = URL + "visitas" + queryParams;
-        Log.d("finalURL", finalURL);
 
         JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET, finalURL, null, response -> {
             try {
@@ -143,6 +142,7 @@ public class VisitsActivity extends AppCompatActivity {
                 VisitAdapter visitsAdapter = new VisitAdapter(visitsList, this);
                 recyclerView.setHasFixedSize(true);
                 recyclerView.setAdapter(visitsAdapter);
+                progressDialog.dismiss();
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -150,6 +150,7 @@ public class VisitsActivity extends AppCompatActivity {
             @Override
             public void onErrorResponse(VolleyError error) {
                 try {
+                    progressDialog.dismiss();
                     Log.e("Error", "onErrorResponse: " + error);
                     String responseBody = new String(error.networkResponse.data, "utf-8");
                     JSONObject data = new JSONObject(responseBody);
@@ -183,7 +184,6 @@ public class VisitsActivity extends AppCompatActivity {
         // Añadir la petición a la cola de solicitudes
         RequestQueue queue = Volley.newRequestQueue(VisitsActivity.this);
         queue.add(jsonObjectRequest);
-        loadingDialog.hide();
     }
 
     public void filters() {

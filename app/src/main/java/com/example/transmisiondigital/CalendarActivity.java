@@ -3,6 +3,7 @@ package com.example.transmisiondigital;
 import static com.example.transmisiondigital.globalVariables.Conexion.URL;
 
 import android.app.DatePickerDialog;
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -59,6 +60,7 @@ public class CalendarActivity extends AppCompatActivity {
     private Button buttonDatePicker;
     private String dateFilter;
     private SharedPreferences sharedPreferences;
+    private ProgressDialog progressDialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -159,6 +161,9 @@ public class CalendarActivity extends AppCompatActivity {
     }
 
     public void init(String dateFilter, String type) {
+        progressDialog = new ProgressDialog(CalendarActivity.this);
+        progressDialog.setMessage("Cargando...");
+        progressDialog.show();
         calendarsList = new ArrayList<>();
         String queryParams = null;
 
@@ -205,6 +210,7 @@ public class CalendarActivity extends AppCompatActivity {
                 CalendarAdapter calendarAdapter = new CalendarAdapter(calendarsList, CalendarActivity.this);
                 recyclerView.setHasFixedSize(true);
                 recyclerView.setAdapter(calendarAdapter);
+                progressDialog.dismiss();
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -229,6 +235,7 @@ public class CalendarActivity extends AppCompatActivity {
 
                 //progressDialog.dismiss();
                 // Mostrar el mensaje de error en un cuadro de diálogo o Toast
+                progressDialog.dismiss();
                 Toast.makeText(CalendarActivity.this, mensajeError, Toast.LENGTH_SHORT).show();
             }
         });

@@ -69,7 +69,9 @@ public class PusherService extends Service {
                     Log.i("Pusher", "Received event with data: " + event.getData());
                     Gson gson = new Gson();
                     Evento evento = gson.fromJson(event.getData(), Evento.class);
-                    showNotification(evento.getMessage());
+                    if (sharedPreferences.getString("rol", "").equals("Administrador")) {
+                        showNotification(evento.getMessage());
+                    }
                 }
             });
         } else {

@@ -3,6 +3,7 @@ package com.example.transmisiondigital;
 import static com.example.transmisiondigital.globalVariables.Conexion.URL;
 
 import android.Manifest;
+import android.app.ProgressDialog;
 import android.app.TimePickerDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.content.Context;
@@ -23,6 +24,7 @@ import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -83,7 +85,7 @@ public class OrderActivity extends AppCompatActivity {
     private JSONArray detallesArray;
     private List<Products> productsList;
     private FrameLayout frameLayoutSpinner;
-    private LoadingDialog loadingDialog;
+    private ProgressDialog progressDialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -91,7 +93,6 @@ public class OrderActivity extends AppCompatActivity {
         setContentView(R.layout.activity_order);
         sharedPreferences = getSharedPreferences("sessionUser", Context.MODE_PRIVATE);
         Intent intent = getIntent();
-        loadingDialog = new LoadingDialog(this);
         idOrder = intent.getStringExtra("idOrder");
         textViewFolio = findViewById(R.id.textViewFolio);
         textViewDate = findViewById(R.id.textViewDate);
@@ -117,6 +118,8 @@ public class OrderActivity extends AppCompatActivity {
         buttonSetHour = findViewById(R.id.buttonSetHour);
         textViewIva = findViewById(R.id.textViewIva);
         textViewSubtotal = findViewById(R.id.textViewSubtotal);
+        progressDialog = new ProgressDialog(OrderActivity.this);
+        progressDialog.setMessage("Cargando...");
 
         if (sharedPreferences.getString("rol", null).equals("Técnico")) {
             spinnerStatus.setVisibility(View.GONE);
@@ -155,7 +158,7 @@ public class OrderActivity extends AppCompatActivity {
     }
 
     public void init() {
-        loadingDialog.show();
+        progressDialog.show();
         productsList = new ArrayList<>();
         JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET, URL + "ordenes/" + idOrder, null, response -> {
             try {
@@ -194,6 +197,17 @@ public class OrderActivity extends AppCompatActivity {
 
                 // Formatear a strings de fecha y hora
                 String soloFecha = formatoFecha.format(fechaHoraSolicitud);
+                Date fechaActual = new Date();{
+
+                }
+                if (fechaHoraSolicitud.after(fechaActual)) {
+                    buttonPrint.setVisibility(View.GONE);
+                    buttonSigned.setVisibility(View.GONE);
+                    buttonSaveTechnical.setVisibility(View.GONE);
+                    buttonEditProducts.setVisibility(View.GONE);
+                    buttonSetHour.setVisibility(View.GONE);
+                }
+
                 soloHora = formatoHora.format(fechaHoraSolicitud);
                 String horaLLegada = (fechaHoraLLegada != null) ? formatoHora.format(fechaHoraLLegada) : "";
                 String horaSalida = (fechaHoraSalida != null) ? formatoHora.format(fechaHoraSalida) : "";
@@ -262,7 +276,7 @@ public class OrderActivity extends AppCompatActivity {
                 textViewIva.setText("IVA (16%): $" + String.format("%.2f", iva));
                 textViewTotal.setText("Total: $" + String.format("%.2f", total));
                 loadImage();
-                loadingDialog.hide();
+                progressDialog.dismiss();
             } catch (JSONException e) {
                 e.printStackTrace();
             } catch (ParseException e) {
@@ -270,7 +284,7 @@ public class OrderActivity extends AppCompatActivity {
             }
         }, error -> {
             try {
-                loadingDialog.hide();
+                progressDialog.dismiss();
                 String responseBody = new String(error.networkResponse.data, "utf-8");
                 JSONObject data = new JSONObject(responseBody);
                 String message = data.getString("message");
@@ -301,7 +315,7 @@ public class OrderActivity extends AppCompatActivity {
 
     public void buttonSave() {
         buttonSave.setOnClickListener(v -> {
-            loadingDialog.show();
+            progressDialog.show();
             String status = spinnerStatus.getSelectedItem().toString();
             String apiEstatus = "";
             JSONObject jsonObject = new JSONObject();
@@ -314,7 +328,7 @@ public class OrderActivity extends AppCompatActivity {
             }
             JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.PATCH, URL + "ordenes/" + apiEstatus + idOrder, jsonObject, response -> {
                 try {
-                    loadingDialog.hide();
+                    progressDialog.dismiss();
                     String message = response.getString("msg");
                     Toast.makeText(OrderActivity.this, message, Toast.LENGTH_SHORT).show();
                 } catch (JSONException e) {
@@ -322,7 +336,7 @@ public class OrderActivity extends AppCompatActivity {
                 }
             }, error -> {
                 try {
-                    loadingDialog.hide();
+                    progressDialog.dismiss();
                     String responseBody = new String(error.networkResponse.data, "utf-8");
                     JSONObject data = new JSONObject(responseBody);
                     String message = data.getString("message");
@@ -346,7 +360,7 @@ public class OrderActivity extends AppCompatActivity {
     }
 
     public void loadImage() {
-        loadingDialog.show();
+        progressDialog.show();
         if (firmaUrl != null && !firmaUrl.isEmpty()) {
             // Make a network request to fetch the image
             ImageRequest imageRequest = new ImageRequest(firmaUrl, response -> {
@@ -356,7 +370,7 @@ public class OrderActivity extends AppCompatActivity {
             }, 0, 0, ImageView.ScaleType.CENTER_CROP, Bitmap.Config.RGB_565, error -> {
                 Log.e("ImageView", "Error fetching image: " + error.getMessage());
             });
-            loadingDialog.hide();
+            progressDialog.dismiss();
             RequestQueue requestQueue = Volley.newRequestQueue(OrderActivity.this);
             requestQueue.add(imageRequest);
             return;
@@ -372,11 +386,11 @@ public class OrderActivity extends AppCompatActivity {
             Log.i("ImageView", "Image file does not exist: " + imageFile.getAbsolutePath());
             imageViewSignature.setVisibility(View.GONE);
         }
-        loadingDialog.hide();
+        progressDialog.dismiss();
     }
 
     public void loadImageOnResume() {
-        loadingDialog.show();
+        progressDialog.show();
         // Path to the image file
         File imageFile = new File(getExternalFilesDir(Environment.DIRECTORY_PICTURES), "signatureOrder_" + idOrder + ".png");
 
@@ -390,15 +404,17 @@ public class OrderActivity extends AppCompatActivity {
                     // Set the Bitmap to the ImageView
                     imageViewSignature.setImageBitmap(response);
                     imageViewSignature.setScaleType(ImageView.ScaleType.CENTER_CROP); // Adjust the image to fit the ImageView
+                    progressDialog.dismiss();
                 }, 0, 0, ImageView.ScaleType.CENTER_CROP, Bitmap.Config.RGB_565, error -> {
                     Log.e("ImageView", "Error fetching image: " + error.getMessage());
+                    progressDialog.dismiss();
                 });
 
                 RequestQueue requestQueue = Volley.newRequestQueue(OrderActivity.this);
                 requestQueue.add(imageRequest);
             }
         }
-        loadingDialog.hide();
+        progressDialog.dismiss();
     }
 
     public void buttonSaveTechnical() {
@@ -423,7 +439,7 @@ public class OrderActivity extends AppCompatActivity {
                     return;
                 }
 
-                loadingDialog.show();
+                progressDialog.show();
                 // Path to the image file
                 File imageFile = new File(getExternalFilesDir(Environment.DIRECTORY_PICTURES), "signatureOrder_" + idOrder + ".png");
 
@@ -439,7 +455,7 @@ public class OrderActivity extends AppCompatActivity {
                             for (int i = 0; i < firmaErrors.length(); i++) {
                                 Log.i("ImagenPeticion", "Error: " + firmaErrors.getString(i));
                             }
-                            //progressBar.setVisibility(View.GONE);
+                            progressDialog.dismiss();
                         } catch (UnsupportedEncodingException | JSONException e) {
                             e.printStackTrace();
                         }
@@ -452,6 +468,7 @@ public class OrderActivity extends AppCompatActivity {
                             } else {
                                 Log.e("ImageView", "Failed to delete image file: " + imageFile.getAbsolutePath());
                             }
+                            progressDialog.dismiss();
                         } catch (UnsupportedEncodingException e) {
                             e.printStackTrace();
                         }
@@ -464,18 +481,17 @@ public class OrderActivity extends AppCompatActivity {
                     Log.i("ImageView", "Image file does not exist: " + imageFile.getAbsolutePath());
                 }
 
-                //progressBar.setVisibility(View.VISIBLE);
+                progressDialog.show();
                 JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.PATCH, URL + "ordenes/finalizar/" + idOrder, null, response -> {
                     try {
                         String message = response.getString("msg");
-                        //Toast.makeText(OrderActivity.this, message, Toast.LENGTH_SHORT).show();
                         updateEntryTime();
-
+                        progressDialog.dismiss();
+                        Toast.makeText(OrderActivity.this, message, Toast.LENGTH_SHORT).show();
                     } catch (JSONException e) {
                         e.printStackTrace();
                     }
                 }, error -> {
-                    //progressBar.setVisibility(View.GONE);
                     if (error.networkResponse != null) {
                         try {
                             String responseBody = new String(error.networkResponse.data, "utf-8");
@@ -488,11 +504,11 @@ public class OrderActivity extends AppCompatActivity {
                     } else {
                         Toast.makeText(OrderActivity.this, "Network error", Toast.LENGTH_SHORT).show();
                     }
+                    progressDialog.dismiss();
                 });
 
                 RequestQueue requestQueue = Volley.newRequestQueue(OrderActivity.this);
                 requestQueue.add(jsonObjectRequest);
-                loadingDialog.hide();
             }
         });
     }
@@ -547,7 +563,7 @@ public class OrderActivity extends AppCompatActivity {
     }
 
     public void updateEntryTime() {
-        loadingDialog.show();
+        progressDialog.show();
         Calendar calendar = Calendar.getInstance();
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
         String currentDate = dateFormat.format(calendar.getTime());
@@ -592,16 +608,10 @@ public class OrderActivity extends AppCompatActivity {
             e.printStackTrace();
         }
         JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.PUT, URL + "ordenes/" + idOrder, order, response -> {
-            try {
-                loadingDialog.hide();
-                String msg = response.getString("msg");
-                Snackbar.make(findViewById(android.R.id.content), msg, Snackbar.LENGTH_LONG).show();
-                Intent intent = new Intent(OrderActivity.this, OrdersActivity.class);
-                startActivity(intent);
-                finish();
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
+            progressDialog.dismiss();
+            Intent intent = new Intent(OrderActivity.this, OrdersActivity.class);
+            startActivity(intent);
+            finish();
         }, error -> {
             try {
                 String responseBody = new String(error.networkResponse.data, "utf-8");
@@ -614,6 +624,7 @@ public class OrderActivity extends AppCompatActivity {
                         Log.e("Volley Error", key + ": " + errorMessages.getString(i));
                     }
                 }
+                progressDialog.dismiss();
             } catch (Exception e) {
                 Log.e("Volley Error", e.toString());
             }
@@ -621,7 +632,6 @@ public class OrderActivity extends AppCompatActivity {
 
         RequestQueue requestQueue = Volley.newRequestQueue(this);
         requestQueue.add(jsonObjectRequest);
-        loadingDialog.hide();
     }
 
     public void buttonPrint() {

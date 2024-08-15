@@ -1,6 +1,7 @@
 package com.example.transmisiondigital;
 
 import android.app.DatePickerDialog;
+import android.app.ProgressDialog;
 import android.app.TimePickerDialog;
 import android.content.Context;
 import android.content.Intent;
@@ -60,14 +61,15 @@ public class OrdersActivity extends AppCompatActivity {
     private Button buttonDatePicker;
     private ArrayAdapter<String> adapter;
     private Spinner spinnerType;
-    private LoadingDialog loadingDialog;
+    private ProgressDialog progressDialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_orders);
         sharedPreferences = getSharedPreferences("sessionUser", Context.MODE_PRIVATE);
-        loadingDialog = new LoadingDialog(OrdersActivity.this);
+        progressDialog = new ProgressDialog(OrdersActivity.this);
+        progressDialog.setMessage("Cargando...");
         header();
         filters();
         //init(dateFilter, selectedItem);
@@ -75,7 +77,6 @@ public class OrdersActivity extends AppCompatActivity {
     }
 
     public void header() {
-        loadingDialog.show();
         TextView textViewName = findViewById(R.id.textViewName);
         String userName = sharedPreferences.getString("userName", "");
         textViewName.setText(userName);
@@ -87,11 +88,10 @@ public class OrdersActivity extends AppCompatActivity {
         } else {
             //imageButtonProfile.setImageResource(R.drawable.default_profile_image); // Replace with your default image resource
         }
-        loadingDialog.hide();
     }
 
     public void init(String dateFilter, String type) {
-        loadingDialog.show();
+        progressDialog.show();
         ordersList = new ArrayList<>();
 
         String queryParams = null;
@@ -139,6 +139,7 @@ public class OrdersActivity extends AppCompatActivity {
                 OrderAdapter orderAdapter = new OrderAdapter(ordersList, OrdersActivity.this);
                 recyclerView.setHasFixedSize(true);
                 recyclerView.setAdapter(orderAdapter);
+                progressDialog.dismiss();
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -146,6 +147,7 @@ public class OrdersActivity extends AppCompatActivity {
             @Override
             public void onErrorResponse(VolleyError error) {
                 // Obtener el mensaje de error de VolleyError
+                progressDialog.dismiss();
                 String mensajeError = "";
 
                 // Verificar si hay una respuesta de error
@@ -167,8 +169,6 @@ public class OrdersActivity extends AppCompatActivity {
 
                 // Imprimir el mensaje de error en el registro (Log)
                 Log.e("Error", "Error en la petición: " + mensajeError);
-                //progressDialog.dismiss();
-                // Mostrar el mensaje de error en un cuadro de diálogo o Toast
                 Toast.makeText(OrdersActivity.this, mensajeError, Toast.LENGTH_SHORT).show();
             }
         });
@@ -176,7 +176,6 @@ public class OrdersActivity extends AppCompatActivity {
         // Añadir la petición a la cola de solicitudes
         RequestQueue queue = Volley.newRequestQueue(OrdersActivity.this);
         queue.add(jsonObjectRequest);
-        loadingDialog.hide();
     }
 
     public void spinnerSetUp() {

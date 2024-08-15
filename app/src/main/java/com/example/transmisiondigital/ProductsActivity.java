@@ -3,6 +3,7 @@ package com.example.transmisiondigital;
 import static com.example.transmisiondigital.globalVariables.Conexion.URL;
 
 import android.app.Dialog;
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -28,6 +29,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.navigation.NavController;
@@ -54,6 +56,7 @@ public class ProductsActivity extends AppCompatActivity {
     private Button buttonSaveProducts, buttonAddProduct;
     private ArrayList<Products> productsList;
     private ProductAdapter productAdapter;
+    private ProgressDialog progressDialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -87,6 +90,8 @@ public class ProductsActivity extends AppCompatActivity {
         recyclerView.setAdapter(productAdapter);
         buttonAddProduct.setOnClickListener(v -> showProductSelectionDialog());
         buttonSaveProducts.setOnClickListener(v -> setButtonSaveProducts());
+        progressDialog = new ProgressDialog(ProductsActivity.this);
+        progressDialog.setMessage("Cargando...");
         header();
         footer();
     }
@@ -130,17 +135,20 @@ public class ProductsActivity extends AppCompatActivity {
     }
 
     public void setButtonSaveProducts() {
+        progressDialog.show();
         JSONObject order = new JSONObject();
         try {
             if (productsList == null || productsList.isEmpty()) {
+                progressDialog.dismiss();
                 Log.d("Order JSON", "Debes de ingresar al menos un producto");
-                Snackbar.make(findViewById(android.R.id.content), "Debes de ingresar al menos un producto", Snackbar.LENGTH_LONG).show();
+                Toast.makeText(ProductsActivity.this, "Debes de ingresar al menos un producto", Toast.LENGTH_SHORT).show();
                 return;
             }
 
             for (Products product : productsList) {
                 if (product.getQuantity() < 1) {
-                    Snackbar.make(findViewById(android.R.id.content), "La cantidad para el producto " + product.getName() + " debe ser mayor a 0", Snackbar.LENGTH_LONG).show();
+                    progressDialog.dismiss();
+                    Toast.makeText(ProductsActivity.this, "La cantidad para el producto " + product.getName() + " debe ser mayor a 0", Toast.LENGTH_SHORT).show();
                     Log.e("ProductsActivity", "Quantity for product " + product.getName() + " was less than 1 and has been set to 1");
                     return;
                 }
@@ -164,12 +172,12 @@ public class ProductsActivity extends AppCompatActivity {
                 products.put(product);
             }
             order.put("detalles", products);
-            Log.d("Order JSON", order.toString());
         } catch (JSONException e) {
             e.printStackTrace();
         }
         JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.PUT, URL + "ordenes/" + idOrder, order, response -> {
             try {
+                progressDialog.dismiss();
                 String msg = response.getString("msg");
                 Snackbar.make(findViewById(android.R.id.content), msg, Snackbar.LENGTH_LONG).show();
                 Intent intent = new Intent(ProductsActivity.this, OrderActivity.class);
@@ -181,6 +189,7 @@ public class ProductsActivity extends AppCompatActivity {
             }
         }, error -> {
             try {
+                progressDialog.dismiss();
                 String responseBody = new String(error.networkResponse.data, "utf-8");
                 JSONObject jsonObject = new JSONObject(responseBody);
                 JSONObject errors = jsonObject.getJSONObject("errors");
@@ -267,6 +276,7 @@ public class ProductsActivity extends AppCompatActivity {
     }
 
     public void getAllProducts(ProductsCallback callback) {
+        progressDialog.show();
         ArrayList<Products> products = new ArrayList<>();
         JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET, URL + "productos", null, response -> {
             try {
@@ -295,10 +305,13 @@ public class ProductsActivity extends AppCompatActivity {
                     }
                 }
                 callback.onSuccess(products);
+                progressDialog.dismiss();
             } catch (JSONException e) {
                 e.printStackTrace();
             }
         }, error -> {
+            progressDialog.dismiss();
+            Toast.makeText(ProductsActivity.this, "Error al cargar los productos", Toast.LENGTH_SHORT).show();
             Log.e("Volley Error", error.toString());
         });
 
