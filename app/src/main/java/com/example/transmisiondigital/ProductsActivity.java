@@ -161,7 +161,7 @@ public class ProductsActivity extends AppCompatActivity {
             order.put("direccion", direccion);
             order.put("puesto", puesto);
             order.put("cliente_id", clienteId);
-            order.put("sucursal_id", sucursalId);
+            order.put("sucursal_id", "-1".equals(sucursalId) ? JSONObject.NULL : sucursalId);
             order.put("tecnico_id", sharedPreferences.getInt("idUser", 0));
             JSONArray products = new JSONArray();
             for (Products p : productsList) {

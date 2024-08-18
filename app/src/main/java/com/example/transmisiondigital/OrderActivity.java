@@ -12,6 +12,9 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -86,6 +89,11 @@ public class OrderActivity extends AppCompatActivity {
     private List<Products> productsList;
     private FrameLayout frameLayoutSpinner;
     private ProgressDialog progressDialog;
+    private static final int REQUEST_LOCATION_PERMISSIONS = 3;
+    private LocationManager locationManager;
+    private LocationListener locationListener;
+    private double latitude;
+    private double longitude;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -168,8 +176,8 @@ public class OrderActivity extends AppCompatActivity {
                 clienteNombre = data.getJSONObject("cliente").getString("nombre");
                 clienteId = data.getJSONObject("cliente").getInt("id");
                 tecnicoNombre = data.getJSONObject("tecnico").getString("nombre");
-                sucursalName = data.getJSONObject("sucursal").getString("nombre");
-                sucursalId = data.getJSONObject("sucursal").getInt("id");
+                sucursalName = data.optJSONObject("sucursal") != null ? data.getJSONObject("sucursal").optString("nombre", null) : null;
+                sucursalId = data.optJSONObject("sucursal") != null ? data.getJSONObject("sucursal").optInt("id", -1) : -1;
 
                 fechaHoraSolicitudStr = data.getString("fechaHoraSolicitud");
                 fechaHoraLLegadaStr = data.optString("fechaHoraLlegada", "");
@@ -179,7 +187,6 @@ public class OrderActivity extends AppCompatActivity {
 
                 SimpleDateFormat formatoOriginal = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                 SimpleDateFormat formatoFecha = new SimpleDateFormat("yyyy-MM-dd");
-                SimpleDateFormat formatoHora = new SimpleDateFormat("HH:mm:ss");
                 Date fechaHoraSolicitud = formatoOriginal.parse(fechaHoraSolicitudStr);
 
                 Date fechaHoraLLegada = null;
@@ -195,18 +202,26 @@ public class OrderActivity extends AppCompatActivity {
                     Log.e("OrderActivity", "error: " + e.getMessage());
                 }
 
-                // Formatear a strings de fecha y hora
-                String soloFecha = formatoFecha.format(fechaHoraSolicitud);
-                Date fechaActual = new Date();{
+                SimpleDateFormat formatoHora = new SimpleDateFormat("HH:mm:ss");
 
-                }
-                if (fechaHoraSolicitud.after(fechaActual)) {
+                Date fechaActual = new Date();
+                String fechaActualStr = formatoFecha.format(fechaActual);
+                String horaActualStr = formatoHora.format(fechaActual);
+
+                String soloFecha = formatoFecha.format(fechaHoraSolicitud);
+                soloHora = formatoHora.format(fechaHoraSolicitud);
+
+                if (!soloFecha.equals(fechaActualStr) || horaActualStr.compareTo(soloHora) < 0) {
                     buttonPrint.setVisibility(View.GONE);
                     buttonSigned.setVisibility(View.GONE);
                     buttonSaveTechnical.setVisibility(View.GONE);
                     buttonEditProducts.setVisibility(View.GONE);
                     buttonSetHour.setVisibility(View.GONE);
                 }
+
+                /*if (fechaActual.after(soloFecha)){
+                    buttonPrint.setVisibility(View.GONE);
+                }*/
 
                 soloHora = formatoHora.format(fechaHoraSolicitud);
                 String horaLLegada = (fechaHoraLLegada != null) ? formatoHora.format(fechaHoraLLegada) : "";
@@ -233,6 +248,7 @@ public class OrderActivity extends AppCompatActivity {
                     buttonSaveTechnical.setVisibility(View.GONE);
                     buttonEditProducts.setVisibility(View.GONE);
                     buttonSigned.setVisibility(View.GONE);
+                    buttonPrint.setVisibility(View.VISIBLE);
                     spinnerStatus.setSelection(1);
                     estatus = "Finalizar";
                 } else if (estatus.equals("Autorizada")) {
@@ -245,7 +261,7 @@ public class OrderActivity extends AppCompatActivity {
 
                 int defaultPosition = adapter.getPosition(estatus);
                 spinnerStatus.setSelection(defaultPosition);
-
+                container.removeAllViews();
                 double subtotal = 0.0;
                 for (int i = 0; i < detallesArray.length(); i++) {
                     JSONObject detalle = detallesArray.getJSONObject(i);
@@ -439,6 +455,34 @@ public class OrderActivity extends AppCompatActivity {
                     return;
                 }
 
+                // Parse the horaLlegada string to extract hour, minute, and second
+                String[] timeParts = horaLlegada.split(":");
+                int llegadaHour = Integer.parseInt(timeParts[0]);
+                int llegadaMinute = Integer.parseInt(timeParts[1]);
+                int llegadaSecond = Integer.parseInt(timeParts[2]);
+
+                // Get the current time
+                Calendar calendarCurrent = Calendar.getInstance();
+                int currentHour = calendarCurrent.get(Calendar.HOUR_OF_DAY);
+                int currentMinute = calendarCurrent.get(Calendar.MINUTE);
+                int currentSecond = calendarCurrent.get(Calendar.SECOND);
+
+                // Calculate the time 5 minutes after the horaLlegada
+                Calendar calendarLlegada = Calendar.getInstance();
+                calendarLlegada.set(Calendar.HOUR_OF_DAY, llegadaHour);
+                calendarLlegada.set(Calendar.MINUTE, llegadaMinute);
+                calendarLlegada.set(Calendar.SECOND, llegadaSecond);
+                calendarLlegada.add(Calendar.MINUTE, 5);
+                int limitHour = calendarLlegada.get(Calendar.HOUR_OF_DAY);
+                int limitMinute = calendarLlegada.get(Calendar.MINUTE);
+                int limitSecond = calendarLlegada.get(Calendar.SECOND);
+
+                // Check if the current time is before the calculated time
+                if (currentHour < limitHour || (currentHour == limitHour && currentMinute < limitMinute) || (currentHour == limitHour && currentMinute == limitMinute && currentSecond < limitSecond)) {
+                    Toast.makeText(OrderActivity.this, "Debe esperar 5 minutos después de la hora de llegada", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
                 progressDialog.show();
                 // Path to the image file
                 File imageFile = new File(getExternalFilesDir(Environment.DIRECTORY_PICTURES), "signatureOrder_" + idOrder + ".png");
@@ -481,11 +525,35 @@ public class OrderActivity extends AppCompatActivity {
                     Log.i("ImageView", "Image file does not exist: " + imageFile.getAbsolutePath());
                 }
 
+                if (!requestLocationUpdates()) {
+                    Toast.makeText(OrderActivity.this, "No se pudo obtener la ubicación", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                String coorSalida = convertToDMS(latitude, true) + " " + convertToDMS(longitude, false);
+
+                Calendar calendar = Calendar.getInstance();
+                SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+                String currentDate = dateFormat.format(calendar.getTime());
+
+                SimpleDateFormat dateTimeFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
+                String fechaHoraSalida = dateTimeFormat.format(calendar.getTime());
+
+                JSONObject order = new JSONObject();
+                try {
+                    order.put("fechaHoraSalida", fechaHoraSalida);
+                    order.put("|", coorSalida);
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+
                 progressDialog.show();
-                JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.PATCH, URL + "ordenes/finalizar/" + idOrder, null, response -> {
+                JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.PATCH, URL + "ordenes/finalizar/" + idOrder, order, response -> {
                     try {
                         String message = response.getString("msg");
-                        updateEntryTime();
+                        Intent intent = new Intent(OrderActivity.this, OrdersActivity.class);
+                        startActivity(intent);
+                        finish();
                         progressDialog.dismiss();
                         Toast.makeText(OrderActivity.this, message, Toast.LENGTH_SHORT).show();
                     } catch (JSONException e) {
@@ -535,29 +603,38 @@ public class OrderActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 // Get the current time
-                Calendar calendar = Calendar.getInstance();
-                int currentHour = calendar.get(Calendar.HOUR_OF_DAY);
-                int currentMinute = calendar.get(Calendar.MINUTE);
+                Calendar calendarCurrent = Calendar.getInstance();
+                int currentHour = calendarCurrent.get(Calendar.HOUR_OF_DAY);
+                int currentMinute = calendarCurrent.get(Calendar.MINUTE);
 
                 // Parse the soloHora string to extract hour and minute
+                Log.d("SoloHora", soloHora);
                 String[] timeParts = soloHora.split(":");
-                int limitHour = Integer.parseInt(timeParts[0]);
-                int limitMinute = Integer.parseInt(timeParts[1]);
+                int requestHour = Integer.parseInt(timeParts[0]);
+                int requestMinute = Integer.parseInt(timeParts[1]);
 
-                // Open a time picker dialog with the default time set to the current time
-                TimePickerDialog timePickerDialog = new TimePickerDialog(OrderActivity.this, R.style.CustomHourPicker, (view, hourOfDay, minute) -> {
-                    // Check if the selected time is before the limit or after the current time
-                    if (hourOfDay < limitHour || (hourOfDay == limitHour && minute < limitMinute) || hourOfDay > currentHour || (hourOfDay == currentHour && minute > currentMinute)) {
-                        Toast.makeText(OrderActivity.this, "No se puede elegir una hora antes de las " + String.format(Locale.getDefault(), "%02d:%02d", limitHour, limitMinute) + " o después de la hora actual", Toast.LENGTH_SHORT).show();
-                    } else {
-                        // Set the selected time to the textViewHour
-                        String selectedTime = String.format(Locale.getDefault(), "%02d:%02d", hourOfDay, minute);
-                        Log.d("HourSelected", "onClick: " + selectedTime);
-                        textViewEntryTime.setText("Hora de llegada: " + selectedTime + ":00");
-                    }
-                }, currentHour, currentMinute, true);
+                // Calculate the time 10 minutes after the soloHora
+                Calendar calendar = Calendar.getInstance();
+                calendar.set(Calendar.HOUR_OF_DAY, requestHour);
+                calendar.set(Calendar.MINUTE, requestMinute);
+                calendar.add(Calendar.MINUTE, 10);
+                int limitHour = calendar.get(Calendar.HOUR_OF_DAY);
+                int limitMinute = calendar.get(Calendar.MINUTE);
 
-                timePickerDialog.show();
+                // Check if the current time is before the request time
+                if (currentHour < requestHour || (currentHour == requestHour && currentMinute < requestMinute)) {
+                    Toast.makeText(OrderActivity.this, "No se puede elegir una hora antes de las " + String.format(Locale.getDefault(), "%02d:%02d", requestHour, requestMinute), Toast.LENGTH_SHORT).show();
+                }
+                // Check if the current time is within 10 minutes after the request time
+                else if (currentHour < limitHour || (currentHour == limitHour && currentMinute <= limitMinute)) {
+                    Toast.makeText(OrderActivity.this, "No se puede elegir una hora dentro de los 10 minutos después de la hora de solicitud", Toast.LENGTH_SHORT).show();
+                }
+                // Set the current time to the textViewHour
+                else {
+                    String selectedTime = String.format(Locale.getDefault(), "%02d:%02d", currentHour, currentMinute);
+                    updateEntryTime();
+                    //textViewEntryTime.setText("Hora de llegada: " + selectedTime + ":00");
+                }
             }
         });
     }
@@ -568,50 +645,25 @@ public class OrderActivity extends AppCompatActivity {
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
         String currentDate = dateFormat.format(calendar.getTime());
 
-        // Combine current date with horaLlegada and add seconds as 00
-        String formattedDateTime = currentDate + " " + horaLlegada;
-        horaLlegada = formattedDateTime;
-
+        if (!requestLocationUpdates()) {
+            Toast.makeText(OrderActivity.this, "No se pudo obtener la ubicación", Toast.LENGTH_SHORT).show();
+            return;
+        }
         SimpleDateFormat dateTimeFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
-        String fechaHoraSalida = dateTimeFormat.format(calendar.getTime());
+        String fechaHoraLlegada = dateTimeFormat.format(calendar.getTime());
+
+        String coorLlegada = convertToDMS(latitude, true) + " " + convertToDMS(longitude, false);
+
         JSONObject order = new JSONObject();
         try {
-            order.put("fechaHoraSolicitud", fechaHoraSolicitudStr != null && !fechaHoraSolicitudStr.isEmpty() ? fechaHoraSolicitudStr : JSONObject.NULL);
-            order.put("fechaHoraLlegada", horaLlegada);
-            order.put("fechaHoraSalida", fechaHoraSalida);
-            order.put("persona_solicitante", personaSolicitante);
-            order.put("direccion", direccion);
-            order.put("puesto", puesto);
-            order.put("cliente_id", clienteId);
-            order.put("sucursal_id", sucursalId);
-            order.put("tecnico_id", sharedPreferences.getInt("idUser", 0));
-            JSONArray products = new JSONArray();
-            for (int i = 0; i < detallesArray.length(); i++) {
-                JSONObject detalle = detallesArray.getJSONObject(i);
-
-                // Obtén el objeto "producto"
-                JSONObject producto = detalle.getJSONObject("producto");
-
-                // Crear un nuevo JSONObject para el producto
-                JSONObject product = new JSONObject();
-                product.put("cantidad", detalle.getString("cantidad"));
-                product.put("descripcion", "Editar");
-                product.put("producto_id", producto.getInt("id"));
-
-                // Agregar el JSONObject del producto al JSONArray
-                products.put(product);
-            }
-
-            // Agregar el JSONArray al objeto de la orden
-            order.put("detalles", products);
+            order.put("fechaHoraLlegada", fechaHoraLlegada);
+            order.put("coorLlegada", coorLlegada);
         } catch (JSONException e) {
             e.printStackTrace();
         }
-        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.PUT, URL + "ordenes/" + idOrder, order, response -> {
+        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.POST, URL + "ordenes/horaLlegada/" + idOrder, order, response -> {
             progressDialog.dismiss();
-            Intent intent = new Intent(OrderActivity.this, OrdersActivity.class);
-            startActivity(intent);
-            finish();
+            init();
         }, error -> {
             try {
                 String responseBody = new String(error.networkResponse.data, "utf-8");
@@ -654,6 +706,72 @@ public class OrderActivity extends AppCompatActivity {
                 connectToPrinter();
             }
         });
+    }
+
+    public boolean requestLocationUpdates() {
+        locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+
+        locationListener = new LocationListener() {
+            @Override
+            public void onLocationChanged(@NonNull Location location) {
+                latitude = location.getLatitude();
+                longitude = location.getLongitude();
+                // Use the latitude and longitude as needed
+            }
+
+            @Override
+            public void onStatusChanged(String provider, int status, Bundle extras) {
+            }
+
+            @Override
+            public void onProviderEnabled(@NonNull String provider) {
+            }
+
+            @Override
+            public void onProviderDisabled(@NonNull String provider) {
+            }
+        };
+
+        if (ActivityCompat.checkSelfPermission(OrderActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
+                ActivityCompat.checkSelfPermission(OrderActivity.this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // Request the necessary permissions
+            ActivityCompat.requestPermissions(OrderActivity.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION}, REQUEST_LOCATION_PERMISSIONS);
+            return false;
+        } else {
+            // Permissions are already granted, proceed to get the last known location
+            LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+            Location location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+
+            if (location != null) {
+                latitude = location.getLatitude();
+                longitude = location.getLongitude();
+                // Use latitude and longitude as needed
+                locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 1, locationListener);
+                return true;
+            } else {
+                // Handle the case where location is null
+                Toast.makeText(OrderActivity.this, "No se pudo obtener la ubicacion", Toast.LENGTH_SHORT).show();
+                return false;
+            }
+        }
+    }
+
+    private String convertToDMS(double coord, boolean isLatitude) {
+        String direction;
+        if (isLatitude) {
+            direction = coord >= 0 ? "N" : "S";
+        } else {
+            direction = coord >= 0 ? "E" : "W";
+        }
+        coord = Math.abs(coord);
+        int degrees = (int) coord;
+        coord = (coord - degrees) * 60;
+        int minutes = (int) coord;
+        coord = (coord - minutes) * 60;
+        double seconds = coord;
+
+        //Log.d("Coordenadas", String.format(Locale.getDefault(), "%d°%02d'%05.1f\"%s", degrees, minutes, seconds, direction));
+        return String.format(Locale.getDefault(), "%d°%02d'%05.1f\"%s", degrees, minutes, seconds, direction).replace("\\", "");
     }
 
     private void connectToPrinter() {
@@ -732,6 +850,15 @@ public class OrderActivity extends AppCompatActivity {
         }
     }
 
+    private void checkLocationPermissions() {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
+                ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION},
+                    REQUEST_LOCATION_PERMISSIONS);
+        }
+    }
+
     public void footer() {
         String token = sharedPreferences.getString("token", null);
 
@@ -794,6 +921,13 @@ public class OrderActivity extends AppCompatActivity {
             } else {
                 // Permiso denegado, muestra un mensaje o maneja la situación
                 Toast.makeText(this, "Permiso de Bluetooth denegado", Toast.LENGTH_SHORT).show();
+            }
+        } else if (requestCode == REQUEST_LOCATION_PERMISSIONS) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                // Permiso concedido, puedes continuar con las tareas relacionadas con la ubicación
+            } else {
+                // Permiso denegado, muestra un mensaje
+                Toast.makeText(this, "Debe activar los permisos de ubicación para continuar", Toast.LENGTH_SHORT).show();
             }
         }
     }

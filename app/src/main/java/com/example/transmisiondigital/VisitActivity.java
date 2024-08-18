@@ -2,11 +2,16 @@ package com.example.transmisiondigital;
 
 import static com.example.transmisiondigital.globalVariables.Conexion.URL;
 
+import android.Manifest;
 import android.app.ProgressDialog;
 import android.app.TimePickerDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
@@ -21,8 +26,10 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
+import androidx.core.app.ActivityCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -49,15 +56,19 @@ import java.util.Iterator;
 import java.util.Locale;
 
 public class VisitActivity extends AppCompatActivity {
-    private String idVisit, horaLlegada, fechaHoraSolicitudStr, motivo, direccion, tecnicoId, clienteId, sucursalId;
+    private String idVisit, horaLlegada, fechaHoraSolicitudStr, motivo, direccion, tecnicoId, clienteId, sucursalId, horaSolicitud, fechaHoraSalidaStr;
     private SharedPreferences sharedPreferences;
-    private TextView textViewFolio, textViewDate, textViewHour, textViewAddress, textViewCustomer, textViewReason;
+    private TextView textViewFolio, textViewDate, textViewHour, textViewAddress, textViewCustomer, textViewReason, textViewDepartureTime;
     private TextView textViewTechnical, textViewApplicant, textViewPosition, textViewStatus, textViewEntryTime;
     private Button buttonSave, buttonAttend, buttonSetHour;
     private Spinner spinnerStatus;
     private ArrayAdapter<String> adapter;
     private FrameLayout frameLayoutSpinner;
     private ProgressDialog progressDialog;
+    private double latitude, longitude;
+    private LocationManager locationManager;
+    private LocationListener locationListener;
+    private static final int REQUEST_LOCATION_PERMISSIONS = 3;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -89,6 +100,7 @@ public class VisitActivity extends AppCompatActivity {
         buttonAttend = findViewById(R.id.buttonAttend);
         buttonSetHour = findViewById(R.id.buttonSetHour);
         frameLayoutSpinner = findViewById(R.id.frameLayoutSpinner);
+        textViewDepartureTime = findViewById(R.id.textViewDepartureTime);
         progressDialog = new ProgressDialog(VisitActivity.this);
         progressDialog.setMessage("Cargando...");
 
@@ -141,6 +153,7 @@ public class VisitActivity extends AppCompatActivity {
                 String tecnicoNombre = data.getJSONObject("tecnico").getString("nombre");
 
                 fechaHoraSolicitudStr = data.optString("fechaHoraSolicitud", "");
+                fechaHoraSalidaStr = data.optString("fechaHoraSalida", "");
                 String fechaHoraLlegadaStr = data.optString("fechaHoraLlegada", "");
                 SimpleDateFormat formatoOriginal = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                 SimpleDateFormat formatoFecha = new SimpleDateFormat("yyyy-MM-dd");
@@ -148,6 +161,7 @@ public class VisitActivity extends AppCompatActivity {
 
                 Date fechaHoraSolicitud = null;
                 Date fechaHoraLlegada = null;
+                Date fechaHoraSalida = null;
                 try {
                     fechaHoraSolicitud = formatoOriginal.parse(fechaHoraSolicitudStr);
                 } catch (ParseException e) {
@@ -158,16 +172,24 @@ public class VisitActivity extends AppCompatActivity {
                 } catch (ParseException e) {
                     // Handle the exception or log it if necessary
                 }
+                try {
+                    fechaHoraSalida = formatoOriginal.parse(fechaHoraSalidaStr);
+                } catch (ParseException e) {
+                    // Handle the exception or log it if necessary
+                }
 
                 String fechaSolicitud = (fechaHoraSolicitud != null) ? formatoFecha.format(fechaHoraSolicitud) : "";
-                String horaSolicitud = (fechaHoraSolicitud != null) ? formatoHora.format(fechaHoraSolicitud) : "";
-                String horaLlegada = (fechaHoraLlegada != null) ? formatoHora.format(fechaHoraLlegada) : "";
+                horaSolicitud = (fechaHoraSolicitud != null) ? formatoHora.format(fechaHoraSolicitud) : "";
+                String horaSalida = (fechaHoraSalida != null) ? formatoHora.format(fechaHoraSalida) : "";
+                horaLlegada = (fechaHoraLlegada != null) ? formatoHora.format(fechaHoraLlegada) : "";
                 Date fechaActual = new Date();
-                if (fechaHoraSolicitud.after(fechaActual)) {
-                    // Mostrar mensaje si la fecha de solicitud es mayor que la fecha actual
+                String fechaActualStr = formatoFecha.format(fechaActual);
+                String horaActualStr = formatoHora.format(fechaActual);
+
+                if (!fechaSolicitud.equals(fechaActualStr) || (fechaSolicitud.equals(fechaActualStr) && horaActualStr.compareTo(horaSolicitud) < 0)) {
+                    // Hide buttons if the request date is not today or if the current time is before the request time
                     buttonAttend.setVisibility(View.GONE);
                     buttonSetHour.setVisibility(View.GONE);
-
                 }
                 motivo = data.optString("motivo", "");
                 direccion = data.optString("direccion", "");
@@ -185,6 +207,7 @@ public class VisitActivity extends AppCompatActivity {
                 textViewTechnical.setText("Tecnico: " + tecnicoNombre);
                 textViewStatus.setText("Estatus: " + data.getString("estatus"));
                 textViewEntryTime.setText("Hora de llegada: " + horaLlegada);
+                textViewDepartureTime.setText("Hora de salida: " + horaSalida);
 
                 if (estatus.equals("Finalizada")) {
                     buttonSetHour.setVisibility(View.GONE);
@@ -287,10 +310,62 @@ public class VisitActivity extends AppCompatActivity {
                 return;
             }
 
+            // Parse the horaLlegada string to extract hour, minute, and second
+            String[] timeParts = horaLlegada.split(":");
+            int llegadaHour = Integer.parseInt(timeParts[0]);
+            int llegadaMinute = Integer.parseInt(timeParts[1]);
+            int llegadaSecond = Integer.parseInt(timeParts[2]);
+
+            // Get the current time
+            Calendar calendarCurrent = Calendar.getInstance();
+            int currentHour = calendarCurrent.get(Calendar.HOUR_OF_DAY);
+            int currentMinute = calendarCurrent.get(Calendar.MINUTE);
+            int currentSecond = calendarCurrent.get(Calendar.SECOND);
+
+            // Calculate the time 5 minutes after the horaLlegada
+            Calendar calendarLlegada = Calendar.getInstance();
+            calendarLlegada.set(Calendar.HOUR_OF_DAY, llegadaHour);
+            calendarLlegada.set(Calendar.MINUTE, llegadaMinute);
+            calendarLlegada.set(Calendar.SECOND, llegadaSecond);
+            calendarLlegada.add(Calendar.MINUTE, 5);
+            int limitHour = calendarLlegada.get(Calendar.HOUR_OF_DAY);
+            int limitMinute = calendarLlegada.get(Calendar.MINUTE);
+            int limitSecond = calendarLlegada.get(Calendar.SECOND);
+
+            // Check if the current time is before the calculated time
+            if (currentHour < limitHour || (currentHour == limitHour && currentMinute < limitMinute) || (currentHour == limitHour && currentMinute == limitMinute && currentSecond < limitSecond)) {
+                Toast.makeText(VisitActivity.this, "Debe esperar 5 minutos después de la hora de llegada", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            if (!requestLocationUpdates()) {
+                Toast.makeText(VisitActivity.this, "No se pudo obtener la ubicación", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            String coorSalida = convertToDMS(latitude, true) + " " + convertToDMS(longitude, false);
+
+            Calendar calendar = Calendar.getInstance();
+            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+            String currentDate = dateFormat.format(calendar.getTime());
+
+            SimpleDateFormat dateTimeFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
+            String fechaHoraSalida = dateTimeFormat.format(calendar.getTime());
+
+            JSONObject visita = new JSONObject();
+            try {
+                visita.put("fechaHoraSalida", fechaHoraSalida);
+                visita.put("coorSalida", coorSalida);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+
             progressDialog.show();
-            JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.PATCH, URL + "visitas/finalizar/" + idVisit, null, response -> {
+            JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.PATCH, URL + "visitas/finalizar/" + idVisit, visita, response -> {
                 progressDialog.dismiss();
-                requestApiupdate();
+                Intent intent = new Intent(VisitActivity.this, VisitsActivity.class);
+                startActivity(intent);
+                finish();
             }, error -> {
                 try {
                     progressDialog.dismiss();
@@ -313,24 +388,38 @@ public class VisitActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 // Get the current time
+                Calendar calendarCurrent = Calendar.getInstance();
+                int currentHour = calendarCurrent.get(Calendar.HOUR_OF_DAY);
+                int currentMinute = calendarCurrent.get(Calendar.MINUTE);
+
+                // Parse the soloHora string to extract hour and minute
+                Log.d("SoloHora", horaSolicitud);
+                String[] timeParts = horaSolicitud.split(":");
+                int requestHour = Integer.parseInt(timeParts[0]);
+                int requestMinute = Integer.parseInt(timeParts[1]);
+
+                // Calculate the time 10 minutes after the soloHora
                 Calendar calendar = Calendar.getInstance();
-                int currentHour = calendar.get(Calendar.HOUR_OF_DAY);
-                int currentMinute = calendar.get(Calendar.MINUTE);
+                calendar.set(Calendar.HOUR_OF_DAY, requestHour);
+                calendar.set(Calendar.MINUTE, requestMinute);
+                calendar.add(Calendar.MINUTE, 10);
+                int limitHour = calendar.get(Calendar.HOUR_OF_DAY);
+                int limitMinute = calendar.get(Calendar.MINUTE);
 
-                // Subtract one hour from the current time
-                calendar.add(Calendar.HOUR_OF_DAY, -1);
-                int defaultHour = calendar.get(Calendar.HOUR_OF_DAY);
-                int defaultMinute = calendar.get(Calendar.MINUTE);
-
-                // Open a time picker dialog with the default time set to one hour less than the current time
-                TimePickerDialog timePickerDialog = new TimePickerDialog(VisitActivity.this, (view, hourOfDay, minute) -> {
-                    // Set the selected time to the textViewHour
-                    String selectedTime = String.format(Locale.getDefault(), "%02d:%02d", hourOfDay, minute);
-                    Log.d("HourSelected", "onClick: " + selectedTime);
-                    textViewEntryTime.setText("Hora de llegada: " + selectedTime);
-                }, defaultHour, defaultMinute, true);
-
-                timePickerDialog.show();
+                // Check if the current time is before the request time
+                if (currentHour < requestHour || (currentHour == requestHour && currentMinute < requestMinute)) {
+                    Toast.makeText(VisitActivity.this, "No se puede elegir una hora antes de las " + String.format(Locale.getDefault(), "%02d:%02d", requestHour, requestMinute), Toast.LENGTH_SHORT).show();
+                }
+                // Check if the current time is within 10 minutes after the request time
+                else if (currentHour < limitHour || (currentHour == limitHour && currentMinute <= limitMinute)) {
+                    Toast.makeText(VisitActivity.this, "No se puede elegir una hora dentro de los 10 minutos después de la hora de solicitud", Toast.LENGTH_SHORT).show();
+                }
+                // Set the current time to the textViewHour
+                else {
+                    String selectedTime = String.format(Locale.getDefault(), "%02d:%02d", currentHour, currentMinute);
+                    requestApiupdate();
+                    //textViewEntryTime.setText("Hora de llegada: " + selectedTime + ":00");
+                }
             }
         });
     }
@@ -341,26 +430,24 @@ public class VisitActivity extends AppCompatActivity {
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
         String currentDate = dateFormat.format(calendar.getTime());
 
-        // Combine current date with horaLlegada and add seconds as 00
-        String formattedDateTime = currentDate + " " + horaLlegada + ":00";
-        horaLlegada = formattedDateTime;
-
-        SimpleDateFormat dateTimeFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
-        String fechaHoraSalida = dateTimeFormat.format(calendar.getTime());
-        JSONObject jsonObject = new JSONObject();
-        try {
-            jsonObject.put("motivo", motivo);
-            jsonObject.put("direccion", direccion);
-            jsonObject.put("tecnico_id", tecnicoId);
-            jsonObject.put("cliente_id", clienteId);
-            jsonObject.put("sucursal_id", sucursalId);
-            jsonObject.put("fechaHoraSolicitud", fechaHoraSolicitudStr);
-            jsonObject.put("fechaHoraLlegada", horaLlegada);
-            jsonObject.put("fechaHoraSalida", fechaHoraSalida);
-        } catch (JSONException e) {
-            throw new RuntimeException(e);
+        if (!requestLocationUpdates()) {
+            Toast.makeText(VisitActivity.this, "No se pudo obtener la ubicación", Toast.LENGTH_SHORT).show();
+            return;
         }
-        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.PUT, URL + "visitas/" + idVisit, jsonObject, new Response.Listener<JSONObject>() {
+        SimpleDateFormat dateTimeFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
+        String fechaHoraLlegada = dateTimeFormat.format(calendar.getTime());
+
+        String coorLlegada = convertToDMS(latitude, true) + " " + convertToDMS(longitude, false);
+
+        JSONObject visita = new JSONObject();
+        try {
+            visita.put("fechaHoraLlegada", fechaHoraLlegada);
+            visita.put("coorLlegada", coorLlegada);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.POST, URL + "visitas/horaLlegada/" + idVisit, visita, new Response.Listener<JSONObject>() {
             @Override
             public void onResponse(JSONObject response) {
                 String message = null;
@@ -368,9 +455,7 @@ public class VisitActivity extends AppCompatActivity {
                     progressDialog.dismiss();
                     message = response.getString("msg");
                     Toast.makeText(VisitActivity.this, message, Toast.LENGTH_SHORT).show();
-                    Intent intent = new Intent(VisitActivity.this, VisitsActivity.class);
-                    startActivity(intent);
-                    finish();
+                    requestApi();
                 } catch (JSONException e) {
                     throw new RuntimeException(e);
                 }
@@ -412,6 +497,72 @@ public class VisitActivity extends AppCompatActivity {
 
         RequestQueue requestQueue = Volley.newRequestQueue(VisitActivity.this);
         requestQueue.add(jsonObjectRequest);
+    }
+
+    public boolean requestLocationUpdates() {
+        locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+
+        locationListener = new LocationListener() {
+            @Override
+            public void onLocationChanged(@NonNull Location location) {
+                latitude = location.getLatitude();
+                longitude = location.getLongitude();
+                // Use the latitude and longitude as needed
+            }
+
+            @Override
+            public void onStatusChanged(String provider, int status, Bundle extras) {
+            }
+
+            @Override
+            public void onProviderEnabled(@NonNull String provider) {
+            }
+
+            @Override
+            public void onProviderDisabled(@NonNull String provider) {
+            }
+        };
+
+        if (ActivityCompat.checkSelfPermission(VisitActivity.this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
+                ActivityCompat.checkSelfPermission(VisitActivity.this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // Request the necessary permissions
+            ActivityCompat.requestPermissions(VisitActivity.this, new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION}, REQUEST_LOCATION_PERMISSIONS);
+            return false;
+        } else {
+            // Permissions are already granted, proceed to get the last known location
+            LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+            Location location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+
+            if (location != null) {
+                latitude = location.getLatitude();
+                longitude = location.getLongitude();
+                // Use latitude and longitude as needed
+                locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 1, locationListener);
+                return true;
+            } else {
+                // Handle the case where location is null
+                Toast.makeText(VisitActivity.this, "No se pudo obtener la ubicacion", Toast.LENGTH_SHORT).show();
+                return false;
+            }
+        }
+    }
+
+    private String convertToDMS(double coord, boolean isLatitude) {
+        String direction;
+        if (isLatitude) {
+            direction = coord >= 0 ? "N" : "S";
+        } else {
+            direction = coord >= 0 ? "E" : "W";
+        }
+        coord = Math.abs(coord);
+        int degrees = (int) coord;
+        coord = (coord - degrees) * 60;
+        int minutes = (int) coord;
+        coord = (coord - minutes) * 60;
+        double seconds = coord;
+
+        //Log.d("Coordenadas", String.format(Locale.getDefault(), "%d°%02d'%05.1f\"%s", degrees, minutes, seconds, direction));
+        return String.format(Locale.getDefault(), "%d°%02d'%05.1f\"%s", degrees, minutes, seconds, direction).replace("\\", "");
     }
 
     public void footer() {

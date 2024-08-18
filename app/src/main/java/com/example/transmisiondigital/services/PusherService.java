@@ -4,6 +4,7 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -16,7 +17,11 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 
+import com.example.transmisiondigital.MainActivity;
+import com.example.transmisiondigital.OrdersActivity;
 import com.example.transmisiondigital.R;
+import com.example.transmisiondigital.SplashActivity;
+import com.example.transmisiondigital.VisitsActivity;
 import com.example.transmisiondigital.models.Evento;
 import com.google.gson.Gson;
 import com.pusher.client.Pusher;
@@ -61,7 +66,7 @@ public class PusherService extends Service {
             }
         }, ConnectionState.ALL);
 
-        if(sharedPreferences.getString("rol", "").equals("Administrador")){
+        if (sharedPreferences.getString("rol", "").equals("Administrador")) {
             Channel channel = pusher.subscribe("notificaciones_admin");
             channel.bind("notificaciones_admin", new SubscriptionEventListener() {
                 @Override
@@ -82,8 +87,7 @@ public class PusherService extends Service {
                     Log.i("Pusher", "Received event with data: " + event.getData());
                     Gson gson = new Gson();
                     Evento evento = gson.fromJson(event.getData(), Evento.class);
-                    if(sharedPreferences.getInt("idUser", 0) == evento.getTecnicoId())
-                    {
+                    if (sharedPreferences.getInt("idUser", 0) == evento.getTecnicoId()) {
                         showNotification(evento.getMessage());
                     }
                     //showNotification(evento.getMessage());
@@ -99,37 +103,51 @@ public class PusherService extends Service {
     }
 
     private void showNotification(String message) {
-    NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_notification)
-            .setContentTitle("Transmisión Digital")
-            .setContentText(message)
-            .setStyle(new NotificationCompat.BigTextStyle().bigText(message))
-            .setPriority(NotificationCompat.PRIORITY_MAX)
-            .setAutoCancel(true);
-
-    NotificationManagerCompat notificationManager = NotificationManagerCompat.from(this);
-
-    if (ActivityCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            //Log.e("Notification", "Permission for posting notifications not granted.");
+        Intent intent;
+        if (message.contains("visita")) {
+            intent = new Intent(this, VisitsActivity.class);
+        } else if (message.contains("orden")) {
+            intent = new Intent(this, OrdersActivity.class);
+        } else {
+            intent = new Intent(this, SplashActivity.class); // Default activity if neither condition is met
         }
-        return;
+
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
+                .setSmallIcon(R.drawable.ic_notification)
+                .setContentTitle("Transmisión Digital")
+                .setContentText(message)
+                .setStyle(new NotificationCompat.BigTextStyle().bigText(message))
+                .setPriority(NotificationCompat.PRIORITY_MAX)
+                .setAutoCancel(true)
+                .setContentIntent(pendingIntent);
+
+        NotificationManagerCompat notificationManager = NotificationManagerCompat.from(this);
+
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                //Log.e("Notification", "Permission for posting notifications not granted.");
+            }
+            return;
+        }
+        //Log.i("Notification", "Posting notification");
+        notificationManager.notify(NOTIFICATION_ID, builder.build());
     }
-    //Log.i("Notification", "Posting notification");
-    notificationManager.notify(NOTIFICATION_ID, builder.build());
-}
 
     private void createNotificationChannel() {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-        CharSequence name = "Notificaciones";
-        String description = "Canal para notificaciones de Pusher";
-        int importance = NotificationManager.IMPORTANCE_HIGH;
-        NotificationChannel channel = new NotificationChannel(CHANNEL_ID, name, importance);
-        channel.setDescription(description);
-        NotificationManager notificationManager = getSystemService(NotificationManager.class);
-        notificationManager.createNotificationChannel(channel);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            CharSequence name = "Notificaciones";
+            String description = "Canal para notificaciones de Pusher";
+            int importance = NotificationManager.IMPORTANCE_HIGH;
+            NotificationChannel channel = new NotificationChannel(CHANNEL_ID, name, importance);
+            channel.setDescription(description);
+            NotificationManager notificationManager = getSystemService(NotificationManager.class);
+            notificationManager.createNotificationChannel(channel);
+        }
     }
-}
+
     private NotificationCompat.Builder createForegroundNotification() {
         return new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_notification)
