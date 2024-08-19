@@ -651,7 +651,6 @@ public class OrderActivity extends AppCompatActivity {
         Calendar calendar = Calendar.getInstance();
         calendar.set(Calendar.HOUR_OF_DAY, requestHour);
         calendar.set(Calendar.MINUTE, requestMinute);
-        calendar.add(Calendar.MINUTE, 10);
         int limitHour = calendar.get(Calendar.HOUR_OF_DAY);
         int limitMinute = calendar.get(Calendar.MINUTE);
 
@@ -660,9 +659,9 @@ public class OrderActivity extends AppCompatActivity {
             Toast.makeText(OrderActivity.this, "No se puede elegir una hora antes de las " + String.format(Locale.getDefault(), "%02d:%02d", requestHour, requestMinute), Toast.LENGTH_SHORT).show();
         }
         // Check if the current time is within 10 minutes after the request time
-        else if (currentHour < limitHour || (currentHour == limitHour && currentMinute <= limitMinute)) {
+        /*else if (currentHour < limitHour || (currentHour == limitHour && currentMinute <= limitMinute)) {
             Toast.makeText(OrderActivity.this, "No se puede elegir una hora dentro de los 10 minutos después de la hora de solicitud", Toast.LENGTH_SHORT).show();
-        }
+        }*/
         // Set the current time to the textViewHour
         else {
             String selectedTime = String.format(Locale.getDefault(), "%02d:%02d", currentHour, currentMinute);
@@ -695,6 +694,13 @@ public class OrderActivity extends AppCompatActivity {
         }
         JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.POST, URL + "ordenes/horaLlegada/" + idOrder, order, response -> {
             progressDialog.dismiss();
+            String message = null;
+            try {
+                message = response.getString("msg");
+            } catch (JSONException e) {
+                throw new RuntimeException(e);
+            }
+            Toast.makeText(OrderActivity.this, message, Toast.LENGTH_SHORT).show();
             init();
         }, error -> {
             try {
