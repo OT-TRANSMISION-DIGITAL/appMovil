@@ -3,6 +3,7 @@ package com.example.transmisiondigital;
 import static com.example.transmisiondigital.globalVariables.Conexion.URL;
 
 import android.Manifest;
+import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.app.TimePickerDialog;
 import android.content.Context;
@@ -125,7 +126,7 @@ public class VisitActivity extends AppCompatActivity {
         requestApi();
         buttonSave();
         setButtonAttend();
-        setHour();
+        setButtonHour();
     }
 
     public void header() {
@@ -208,6 +209,11 @@ public class VisitActivity extends AppCompatActivity {
                 textViewStatus.setText("Estatus: " + data.getString("estatus"));
                 textViewEntryTime.setText("Hora de llegada: " + horaLlegada);
                 textViewDepartureTime.setText("Hora de salida: " + horaSalida);
+                Log.d("Hora de llegada", horaLlegada);
+
+                if (horaLlegada != null && !horaLlegada.isEmpty() && !horaLlegada.equals("")) {
+                    buttonSetHour.setVisibility(View.GONE);
+                }
 
                 if (estatus.equals("Finalizada")) {
                     buttonSetHour.setVisibility(View.GONE);
@@ -292,136 +298,164 @@ public class VisitActivity extends AppCompatActivity {
 
     public void setButtonAttend() {
         buttonAttend.setOnClickListener(v -> {
-            String entryTimeText = textViewEntryTime.getText().toString();
-            if (entryTimeText.contains("Hora de llegada: ")) {
-                Log.i("", entryTimeText);
-                String[] parts = entryTimeText.split("Hora de llegada: ");
-                if (parts.length > 1 && !parts[1].trim().isEmpty()) {
-                    horaLlegada = parts[1];
-                } else {
-                    horaLlegada = "";
-                }
+            new AlertDialog.Builder(VisitActivity.this)
+                    .setTitle("Confirmar")
+                    .setMessage("¿Desea finalizar la orden?")
+                    .setPositiveButton("Confirmar", (dialog, which) -> {
+                        // Acción a realizar si se confirma
+                        finalizarVisita();
+                    })
+                    .setNegativeButton("Cancelar", (dialog, which) -> {
+                        // No hacer nada si se cancela
+                        dialog.dismiss();
+                    })
+                    .show();
+        });
+    }
+
+    private void finalizarVisita() {
+        String entryTimeText = textViewEntryTime.getText().toString();
+        if (entryTimeText.contains("Hora de llegada: ")) {
+            Log.i("", entryTimeText);
+            String[] parts = entryTimeText.split("Hora de llegada: ");
+            if (parts.length > 1 && !parts[1].trim().isEmpty()) {
+                horaLlegada = parts[1];
             } else {
                 horaLlegada = "";
             }
+        } else {
+            horaLlegada = "";
+        }
 
-            if (horaLlegada.isEmpty()) {
-                Toast.makeText(VisitActivity.this, "Debe seleccionar una hora de llegada", Toast.LENGTH_SHORT).show();
-                return;
-            }
+        if (horaLlegada.isEmpty()) {
+            Toast.makeText(VisitActivity.this, "Debe seleccionar una hora de llegada", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
-            // Parse the horaLlegada string to extract hour, minute, and second
-            String[] timeParts = horaLlegada.split(":");
-            int llegadaHour = Integer.parseInt(timeParts[0]);
-            int llegadaMinute = Integer.parseInt(timeParts[1]);
-            int llegadaSecond = Integer.parseInt(timeParts[2]);
+        // Parse the horaLlegada string to extract hour, minute, and second
+        String[] timeParts = horaLlegada.split(":");
+        int llegadaHour = Integer.parseInt(timeParts[0]);
+        int llegadaMinute = Integer.parseInt(timeParts[1]);
+        int llegadaSecond = Integer.parseInt(timeParts[2]);
 
-            // Get the current time
-            Calendar calendarCurrent = Calendar.getInstance();
-            int currentHour = calendarCurrent.get(Calendar.HOUR_OF_DAY);
-            int currentMinute = calendarCurrent.get(Calendar.MINUTE);
-            int currentSecond = calendarCurrent.get(Calendar.SECOND);
+        // Get the current time
+        Calendar calendarCurrent = Calendar.getInstance();
+        int currentHour = calendarCurrent.get(Calendar.HOUR_OF_DAY);
+        int currentMinute = calendarCurrent.get(Calendar.MINUTE);
+        int currentSecond = calendarCurrent.get(Calendar.SECOND);
 
-            // Calculate the time 5 minutes after the horaLlegada
-            Calendar calendarLlegada = Calendar.getInstance();
-            calendarLlegada.set(Calendar.HOUR_OF_DAY, llegadaHour);
-            calendarLlegada.set(Calendar.MINUTE, llegadaMinute);
-            calendarLlegada.set(Calendar.SECOND, llegadaSecond);
-            calendarLlegada.add(Calendar.MINUTE, 5);
-            int limitHour = calendarLlegada.get(Calendar.HOUR_OF_DAY);
-            int limitMinute = calendarLlegada.get(Calendar.MINUTE);
-            int limitSecond = calendarLlegada.get(Calendar.SECOND);
+        // Calculate the time 5 minutes after the horaLlegada
+        Calendar calendarLlegada = Calendar.getInstance();
+        calendarLlegada.set(Calendar.HOUR_OF_DAY, llegadaHour);
+        calendarLlegada.set(Calendar.MINUTE, llegadaMinute);
+        calendarLlegada.set(Calendar.SECOND, llegadaSecond);
+        calendarLlegada.add(Calendar.MINUTE, 5);
+        int limitHour = calendarLlegada.get(Calendar.HOUR_OF_DAY);
+        int limitMinute = calendarLlegada.get(Calendar.MINUTE);
+        int limitSecond = calendarLlegada.get(Calendar.SECOND);
 
-            // Check if the current time is before the calculated time
-            if (currentHour < limitHour || (currentHour == limitHour && currentMinute < limitMinute) || (currentHour == limitHour && currentMinute == limitMinute && currentSecond < limitSecond)) {
-                Toast.makeText(VisitActivity.this, "Debe esperar 5 minutos después de la hora de llegada", Toast.LENGTH_SHORT).show();
-                return;
-            }
+        // Check if the current time is before the calculated time
+        if (currentHour < limitHour || (currentHour == limitHour && currentMinute < limitMinute) || (currentHour == limitHour && currentMinute == limitMinute && currentSecond < limitSecond)) {
+            Toast.makeText(VisitActivity.this, "Debe esperar 5 minutos después de la hora de llegada", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
-            if (!requestLocationUpdates()) {
-                Toast.makeText(VisitActivity.this, "No se pudo obtener la ubicación", Toast.LENGTH_SHORT).show();
-                return;
-            }
+        if (!requestLocationUpdates()) {
+            Toast.makeText(VisitActivity.this, "No se pudo obtener la ubicación", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
-            String coorSalida = convertToDMS(latitude, true) + " " + convertToDMS(longitude, false);
+        String coorSalida = convertToDMS(latitude, true) + " " + convertToDMS(longitude, false);
 
-            Calendar calendar = Calendar.getInstance();
-            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
-            String currentDate = dateFormat.format(calendar.getTime());
+        Calendar calendar = Calendar.getInstance();
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+        String currentDate = dateFormat.format(calendar.getTime());
 
-            SimpleDateFormat dateTimeFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
-            String fechaHoraSalida = dateTimeFormat.format(calendar.getTime());
+        SimpleDateFormat dateTimeFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
+        String fechaHoraSalida = dateTimeFormat.format(calendar.getTime());
 
-            JSONObject visita = new JSONObject();
+        JSONObject visita = new JSONObject();
+        try {
+            visita.put("fechaHoraSalida", fechaHoraSalida);
+            visita.put("coorSalida", coorSalida);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        progressDialog.show();
+        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.PATCH, URL + "visitas/finalizar/" + idVisit, visita, response -> {
+            progressDialog.dismiss();
+            Intent intent = new Intent(VisitActivity.this, VisitsActivity.class);
+            startActivity(intent);
+            finish();
+        }, error -> {
             try {
-                visita.put("fechaHoraSalida", fechaHoraSalida);
-                visita.put("coorSalida", coorSalida);
-            } catch (JSONException e) {
+                progressDialog.dismiss();
+                String responseBody = new String(error.networkResponse.data, "utf-8");
+                JSONObject data = new JSONObject(responseBody);
+                String message = data.getString("msg");
+                Toast.makeText(VisitActivity.this, message, Toast.LENGTH_SHORT).show();
+            } catch (UnsupportedEncodingException | JSONException e) {
                 e.printStackTrace();
             }
+        });
 
-            progressDialog.show();
-            JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.PATCH, URL + "visitas/finalizar/" + idVisit, visita, response -> {
-                progressDialog.dismiss();
-                Intent intent = new Intent(VisitActivity.this, VisitsActivity.class);
-                startActivity(intent);
-                finish();
-            }, error -> {
-                try {
-                    progressDialog.dismiss();
-                    String responseBody = new String(error.networkResponse.data, "utf-8");
-                    JSONObject data = new JSONObject(responseBody);
-                    String message = data.getString("msg");
-                    Toast.makeText(VisitActivity.this, message, Toast.LENGTH_SHORT).show();
-                } catch (UnsupportedEncodingException | JSONException e) {
-                    e.printStackTrace();
-                }
-            });
+        RequestQueue requestQueue = Volley.newRequestQueue(VisitActivity.this);
+        requestQueue.add(jsonObjectRequest);
 
-            RequestQueue requestQueue = Volley.newRequestQueue(VisitActivity.this);
-            requestQueue.add(jsonObjectRequest);
+    }
+
+    public void setButtonHour() {
+        buttonSetHour.setOnClickListener(v -> {
+            new AlertDialog.Builder(VisitActivity.this)
+                    .setTitle("Confirmar")
+                    .setMessage("¿Desea asignar hora de llegada?")
+                    .setPositiveButton("Confirmar", (dialog, which) -> {
+                        // Acción a realizar si se confirma
+                        setHour();
+                    })
+                    .setNegativeButton("Cancelar", (dialog, which) -> {
+                        // No hacer nada si se cancela
+                        dialog.dismiss();
+                    })
+                    .show();
         });
     }
 
     public void setHour() {
-        buttonSetHour.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                // Get the current time
-                Calendar calendarCurrent = Calendar.getInstance();
-                int currentHour = calendarCurrent.get(Calendar.HOUR_OF_DAY);
-                int currentMinute = calendarCurrent.get(Calendar.MINUTE);
+        // Get the current time
+        Calendar calendarCurrent = Calendar.getInstance();
+        int currentHour = calendarCurrent.get(Calendar.HOUR_OF_DAY);
+        int currentMinute = calendarCurrent.get(Calendar.MINUTE);
 
-                // Parse the soloHora string to extract hour and minute
-                Log.d("SoloHora", horaSolicitud);
-                String[] timeParts = horaSolicitud.split(":");
-                int requestHour = Integer.parseInt(timeParts[0]);
-                int requestMinute = Integer.parseInt(timeParts[1]);
+        // Parse the soloHora string to extract hour and minute
+        Log.d("SoloHora", horaSolicitud);
+        String[] timeParts = horaSolicitud.split(":");
+        int requestHour = Integer.parseInt(timeParts[0]);
+        int requestMinute = Integer.parseInt(timeParts[1]);
 
-                // Calculate the time 10 minutes after the soloHora
-                Calendar calendar = Calendar.getInstance();
-                calendar.set(Calendar.HOUR_OF_DAY, requestHour);
-                calendar.set(Calendar.MINUTE, requestMinute);
-                calendar.add(Calendar.MINUTE, 10);
-                int limitHour = calendar.get(Calendar.HOUR_OF_DAY);
-                int limitMinute = calendar.get(Calendar.MINUTE);
+        // Calculate the time 10 minutes after the soloHora
+        Calendar calendar = Calendar.getInstance();
+        calendar.set(Calendar.HOUR_OF_DAY, requestHour);
+        calendar.set(Calendar.MINUTE, requestMinute);
+        calendar.add(Calendar.MINUTE, 10);
+        int limitHour = calendar.get(Calendar.HOUR_OF_DAY);
+        int limitMinute = calendar.get(Calendar.MINUTE);
 
-                // Check if the current time is before the request time
-                if (currentHour < requestHour || (currentHour == requestHour && currentMinute < requestMinute)) {
-                    Toast.makeText(VisitActivity.this, "No se puede elegir una hora antes de las " + String.format(Locale.getDefault(), "%02d:%02d", requestHour, requestMinute), Toast.LENGTH_SHORT).show();
-                }
-                // Check if the current time is within 10 minutes after the request time
-                else if (currentHour < limitHour || (currentHour == limitHour && currentMinute <= limitMinute)) {
-                    Toast.makeText(VisitActivity.this, "No se puede elegir una hora dentro de los 10 minutos después de la hora de solicitud", Toast.LENGTH_SHORT).show();
-                }
-                // Set the current time to the textViewHour
-                else {
-                    String selectedTime = String.format(Locale.getDefault(), "%02d:%02d", currentHour, currentMinute);
-                    requestApiupdate();
-                    //textViewEntryTime.setText("Hora de llegada: " + selectedTime + ":00");
-                }
-            }
-        });
+        // Check if the current time is before the request time
+        if (currentHour < requestHour || (currentHour == requestHour && currentMinute < requestMinute)) {
+            Toast.makeText(VisitActivity.this, "No se puede elegir una hora antes de las " + String.format(Locale.getDefault(), "%02d:%02d", requestHour, requestMinute), Toast.LENGTH_SHORT).show();
+        }
+        // Check if the current time is within 10 minutes after the request time
+        else if (currentHour < limitHour || (currentHour == limitHour && currentMinute <= limitMinute)) {
+            Toast.makeText(VisitActivity.this, "No se puede elegir una hora dentro de los 10 minutos después de la hora de solicitud", Toast.LENGTH_SHORT).show();
+        }
+        // Set the current time to the textViewHour
+        else {
+            String selectedTime = String.format(Locale.getDefault(), "%02d:%02d", currentHour, currentMinute);
+            requestApiupdate();
+            //textViewEntryTime.setText("Hora de llegada: " + selectedTime + ":00");
+        }
     }
 
     public void requestApiupdate() {
